@@ -103,7 +103,10 @@
                                         </thead>
                                         <tbody>
                                             @foreach ($transactions as $index => $transaction)
-                                                <tr>
+                                                <tr data-type="{{ $transaction->type }}" 
+                                                    data-user-id="{{ $transaction->user_id }}" 
+                                                    data-shift-id="{{ $transaction->teller_shift_id ?? '' }}" 
+                                                    data-created-at="{{ $transaction->created_at->format('Y-m-d') }}">
                                                     <td>{{ $index + 1 }}</td>
                                                     <td>
                                                         @php
@@ -171,6 +174,10 @@
                 }
 
                 var defaultPageLength = {{ getSetting('default_page_length', 10) }};
+                
+                // Date Range Picker variables (declared before filter function)
+                var start = moment().startOf('month');
+                var end = moment().endOf('month');
 
                 var table = $('#transactions-table').DataTable({
                     pageLength: defaultPageLength,
@@ -179,16 +186,59 @@
                     order: [[5, 'desc']] // Order by created_at descending
                 });
 
+                // Custom filter function
+                $.fn.dataTable.ext.search.push(
+                    function(settings, data, dataIndex) {
+                        var row = table.row(dataIndex).node();
+                        
+                        // Get filter values
+                        var typeFilter = $('#type-filter').val();
+                        var shiftFilter = $('#shift-filter').val();
+                        var userFilter = $('#user-filter').val();
+                        var dateStart = start ? start.format('YYYY-MM-DD') : null;
+                        var dateEnd = end ? end.format('YYYY-MM-DD') : null;
+                        
+                        // Type filter
+                        if (typeFilter && $(row).data('type') !== typeFilter) {
+                            return false;
+                        }
+                        
+                        // Shift filter
+                        if (shiftFilter) {
+                            var rowShiftId = $(row).data('shift-id') || '';
+                            if (String(rowShiftId) !== String(shiftFilter)) {
+                                return false;
+                            }
+                        }
+                        
+                        // User filter
+                        if (userFilter) {
+                            var rowUserId = $(row).data('user-id');
+                            if (String(rowUserId) !== String(userFilter)) {
+                                return false;
+                            }
+                        }
+                        
+                        // Date range filter
+                        if (dateStart && dateEnd) {
+                            var rowDate = $(row).data('created-at');
+                            if (rowDate && (rowDate < dateStart || rowDate > dateEnd)) {
+                                return false;
+                            }
+                        }
+                        
+                        return true;
+                    }
+                );
+
                 // Filter change handlers - filter client-side
-                $('#type-filter, #shift-filter, #user-filter').change(function() {
+                $('#type-filter, #shift-filter, #user-filter').on('change', function() {
                     table.draw();
                 });
 
-                // Date Range Picker
-                var start = moment().startOf('month');
-                var end = moment().endOf('month');
-
-                function cb(start, end) {
+                function cb(startDate, endDate) {
+                    start = startDate;
+                    end = endDate;
                     $('#reportrange span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
                     table.draw();
                 }

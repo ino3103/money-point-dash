@@ -1,12 +1,11 @@
 {
-  "main_domain": "moneypoint.com",
-  "domains": [
-    {
-      "domain": "ino",
-      "name": "INO Company",
-      "description": "INO Money Point System",
-      "is_active": true
-    }
-  ]
+    "main_domain": "moneypoint.com",
+    "domains": [
+        {
+            "domain": "ino.moneypoint.com",
+            "name": "INO Company",
+            "description": "INO Money Point System",
+            "is_active": true
+        }
+    ]
 }
-

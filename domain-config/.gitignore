@@ -1,0 +1,7 @@
+# Logs
+logs/
+*.log
+
+# Configuration (if sensitive)
+# domains.json
+

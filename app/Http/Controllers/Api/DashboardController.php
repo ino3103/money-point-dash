@@ -123,8 +123,10 @@ class DashboardController extends Controller
         // Count transactions by type for today
         $todayTransactionsByType = $todayTransactions->groupBy('type')->map->count();
 
-        // Total Float Capital
-        $totalFloatCapital = $floatBalances->sum('total');
+        // Total Float Capital (sum of all float balances in cents, then convert to currency)
+        $totalFloatCapital = $floatBalances->sum(function ($providerData) {
+            return abs($providerData['system_total']);
+        });
 
         // This Week vs Last Week Comparison
         $thisWeekStart = now()->startOfWeek();
@@ -241,10 +243,10 @@ class DashboardController extends Controller
             ];
         }, array_values($providerVolumes));
 
-        // Cash vs Float Ratio
-        $totalCapital = $totalCash + ($totalFloatCapital * 100);
+        // Cash vs Float Ratio (both in cents)
+        $totalCapital = $totalCash + $totalFloatCapital;
         $cashRatio = $totalCapital > 0 ? ($totalCash / $totalCapital) * 100 : 0;
-        $floatRatio = $totalCapital > 0 ? (($totalFloatCapital * 100) / $totalCapital) * 100 : 0;
+        $floatRatio = $totalCapital > 0 ? ($totalFloatCapital / $totalCapital) * 100 : 0;
 
         // Discrepancy Rate
         $totalShifts = TellerShift::count();
@@ -294,7 +296,7 @@ class DashboardController extends Controller
                     'pending_verification' => $pendingVerificationCount,
                     'discrepancy_shifts' => $discrepancyShiftsCount,
                     'total_cash' => $totalCash / 100,
-                    'total_float_capital' => $totalFloatCapital,
+                    'total_float_capital' => $totalFloatCapital / 100,
                     'total_mtaji_in_system' => $totalMtajiInSystem / 100,
                     'this_week_deposits' => $thisWeekDepositAmount / 100,
                     'last_week_deposits' => $lastWeekDepositAmount / 100,

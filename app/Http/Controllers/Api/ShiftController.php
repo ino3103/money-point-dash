@@ -60,7 +60,7 @@ class ShiftController extends Controller
                 $openingFloatsFormatted = [];
                 if ($shift->opening_floats) {
                     foreach ($shift->opening_floats as $provider => $amount) {
-                        $openingFloatsFormatted[$provider] = abs($amount) / 100;
+                        $openingFloatsFormatted[$provider] = abs($amount);
                     }
                 }
 
@@ -69,7 +69,7 @@ class ShiftController extends Controller
                 if ($shift->closing_floats) {
                     $closingFloatsFormatted = [];
                     foreach ($shift->closing_floats as $provider => $amount) {
-                        $closingFloatsFormatted[$provider] = abs($amount) / 100;
+                        $closingFloatsFormatted[$provider] = abs($amount);
                     }
                 }
 
@@ -78,7 +78,7 @@ class ShiftController extends Controller
                 if ($shift->variance_floats) {
                     $varianceFloatsFormatted = [];
                     foreach ($shift->variance_floats as $provider => $amount) {
-                        $varianceFloatsFormatted[$provider] = $amount / 100;
+                        $varianceFloatsFormatted[$provider] = $amount;
                     }
                 }
 
@@ -89,11 +89,11 @@ class ShiftController extends Controller
                     'treasurer_id' => $shift->treasurer_id,
                     'treasurer_name' => $shift->treasurer->name ?? null,
                     'status' => $shift->status,
-                    'opening_cash' => $shift->opening_cash ? $shift->opening_cash / 100 : 0,
+                    'opening_cash' => $shift->opening_cash ? $shift->opening_cash : 0,
                     'opening_floats' => $openingFloatsFormatted,
-                    'closing_cash' => $shift->closing_cash ? $shift->closing_cash / 100 : null,
+                    'closing_cash' => $shift->closing_cash ? $shift->closing_cash : null,
                     'closing_floats' => $closingFloatsFormatted,
-                    'variance_cash' => $shift->variance_cash ? $shift->variance_cash / 100 : null,
+                    'variance_cash' => $shift->variance_cash ? $shift->variance_cash : null,
                     'variance_floats' => $varianceFloatsFormatted,
                     'opened_at' => $shift->opened_at->toISOString(),
                     'closed_at' => $shift->closed_at ? $shift->closed_at->toISOString() : null,
@@ -186,7 +186,7 @@ class ShiftController extends Controller
                 $openingFloatsFormatted[] = [
                     'provider' => $provider,
                     'display_name' => $providerNames[$provider] ?? ucfirst($provider),
-                    'amount' => abs($amount) / 100,
+                    'amount' => abs($amount),
                 ];
             }
         }
@@ -199,7 +199,7 @@ class ShiftController extends Controller
                 $closingFloatsFormatted[] = [
                     'provider' => $provider,
                     'display_name' => $providerNames[$provider] ?? ucfirst($provider),
-                    'amount' => abs($amount) / 100,
+                    'amount' => abs($amount),
                 ];
             }
         }
@@ -212,7 +212,7 @@ class ShiftController extends Controller
                 $varianceFloatsFormatted[] = [
                     'provider' => $provider,
                     'display_name' => $providerNames[$provider] ?? ucfirst($provider),
-                    'amount' => $amount / 100,
+                    'amount' => $amount,
                 ];
             }
         }
@@ -226,22 +226,22 @@ class ShiftController extends Controller
                 'treasurer_id' => $shift->treasurer_id,
                 'treasurer_name' => $shift->treasurer->name ?? null,
                 'status' => $shift->status,
-                'opening_cash' => $shift->opening_cash ? $shift->opening_cash / 100 : 0,
+                'opening_cash' => $shift->opening_cash ? $shift->opening_cash : 0,
                 'opening_floats' => $openingFloatsFormatted,
-                'actual_starting_cash' => $actualStartingCash / 100,
+                'actual_starting_cash' => $actualStartingCash,
                 'actual_starting_floats' => array_map(function ($v) {
-                    return abs($v) / 100;
+                    return abs($v);
                 }, $actualStartingFloats),
-                'mtaji' => $mtaji / 100, // Opening Capital (Cash + Sum of all Floats)
-                'closing_cash' => $shift->closing_cash ? $shift->closing_cash / 100 : null,
+                'mtaji' => $mtaji, // Opening Capital (Cash + Sum of all Floats)
+                'closing_cash' => $shift->closing_cash ? $shift->closing_cash : null,
                 'closing_floats' => $closingFloatsFormatted,
-                'expected_closing_cash' => $shift->expected_closing_cash ? $shift->expected_closing_cash / 100 : null,
+                'expected_closing_cash' => $shift->expected_closing_cash ? $shift->expected_closing_cash : null,
                 'expected_closing_floats' => $shift->expected_closing_floats ? array_map(function ($v) {
-                    return abs($v) / 100;
+                    return abs($v);
                 }, $shift->expected_closing_floats) : null,
-                'variance_cash' => $shift->variance_cash ? $shift->variance_cash / 100 : null,
+                'variance_cash' => $shift->variance_cash ? $shift->variance_cash : null,
                 'variance_floats' => $varianceFloatsFormatted,
-                'balanced' => $balanced ? $balanced / 100 : null, // Closing Capital
+                'balanced' => $balanced ? $balanced : null, // Closing Capital
                 'opened_at' => $shift->opened_at->toISOString(),
                 'closed_at' => $shift->closed_at ? $shift->closed_at->toISOString() : null,
                 'notes' => $shift->notes,
@@ -252,7 +252,7 @@ class ShiftController extends Controller
                     return [
                         'id' => $tx->id,
                         'type' => $tx->type,
-                        'amount' => $cashLine ? abs($cashLine->amount) / 100 : 0,
+                        'amount' => $cashLine ? abs($cashLine->amount) : 0,
                         'user_name' => $tx->user->name ?? null,
                         'created_at' => $tx->created_at->toISOString(),
                     ];
@@ -306,9 +306,9 @@ class ShiftController extends Controller
 
             if ($previousShift) {
                 $previousClosingBalances[$teller['id']] = [
-                    'cash' => $previousShift->closing_cash ? $previousShift->closing_cash / 100 : 0,
+                    'cash' => $previousShift->closing_cash ? $previousShift->closing_cash : 0,
                     'floats' => $previousShift->closing_floats ? array_map(function ($v) {
-                        return abs($v) / 100;
+                        return abs($v);
                     }, $previousShift->closing_floats) : [],
                 ];
             }
@@ -344,13 +344,13 @@ class ShiftController extends Controller
             'use_previous_float' => 'nullable|array',
         ]);
 
-        // Convert amounts to cents (integers)
-        $openingCash = (int)($request->opening_cash * 100);
+        // Convert amounts to integers (amounts are already in currency format)
+        $openingCash = (int)$request->opening_cash;
         $openingFloats = [];
         if ($request->opening_floats) {
             foreach ($request->opening_floats as $provider => $amount) {
                 if ($amount > 0) {
-                    $openingFloats[$provider] = (int)($amount * 100);
+                    $openingFloats[$provider] = (int)$amount;
                 }
             }
         }
@@ -421,9 +421,9 @@ class ShiftController extends Controller
                     'treasurer_id' => $shift->treasurer_id,
                     'treasurer_name' => $shift->treasurer->name ?? null,
                     'status' => $shift->status,
-                    'opening_cash' => $shift->opening_cash ? $shift->opening_cash / 100 : 0,
+                    'opening_cash' => $shift->opening_cash ? $shift->opening_cash : 0,
                     'opening_floats' => $shift->opening_floats ? array_map(function ($v) {
-                        return abs($v) / 100;
+                        return abs($v);
                     }, $shift->opening_floats) : [],
                     'opened_at' => $shift->opened_at->toISOString(),
                 ]
@@ -474,7 +474,7 @@ class ShiftController extends Controller
                 $openingFloatsFormatted[] = [
                     'provider' => $provider,
                     'display_name' => $providerNames[$provider] ?? ucfirst($provider),
-                    'amount' => abs($amount) / 100,
+                    'amount' => abs($amount),
                 ];
             }
         }
@@ -484,11 +484,11 @@ class ShiftController extends Controller
             'data' => [
                 'id' => $shift->id,
                 'teller_name' => $shift->teller->name ?? null,
-                'opening_cash' => $shift->opening_cash ? $shift->opening_cash / 100 : 0,
+                'opening_cash' => $shift->opening_cash ? $shift->opening_cash : 0,
                 'opening_floats' => $openingFloatsFormatted,
-                'expected_closing_cash' => $shift->expected_closing_cash ? $shift->expected_closing_cash / 100 : null,
+                'expected_closing_cash' => $shift->expected_closing_cash ? $shift->expected_closing_cash : null,
                 'expected_closing_floats' => $shift->expected_closing_floats ? array_map(function ($v) {
-                    return abs($v) / 100;
+                    return abs($v);
                 }, $shift->expected_closing_floats) : null,
             ]
         ]);
@@ -522,11 +522,11 @@ class ShiftController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        // Convert amounts to cents (integers)
-        $closingCash = (int)($request->closing_cash * 100);
+        // Convert amounts to integers (amounts are already in currency format)
+        $closingCash = (int)$request->closing_cash;
         $closingFloats = [];
         foreach ($request->closing_floats as $provider => $amount) {
-            $closingFloats[$provider] = (int)($amount * 100);
+            $closingFloats[$provider] = (int)$amount;
         }
 
         // Validate amounts
@@ -568,7 +568,7 @@ class ShiftController extends Controller
                     $varianceFloatsFormatted[] = [
                         'provider' => $provider,
                         'display_name' => $providerModel ? $providerModel->display_name : ucfirst($provider),
-                        'amount' => $amount / 100,
+                        'amount' => $amount,
                     ];
                 }
             }
@@ -579,11 +579,11 @@ class ShiftController extends Controller
                 'data' => [
                     'id' => $shift->id,
                     'status' => $shift->status,
-                    'closing_cash' => $shift->closing_cash ? $shift->closing_cash / 100 : null,
+                    'closing_cash' => $shift->closing_cash ? $shift->closing_cash : null,
                     'closing_floats' => $shift->closing_floats ? array_map(function ($v) {
-                        return abs($v) / 100;
+                        return abs($v);
                     }, $shift->closing_floats) : null,
-                    'variance_cash' => $shift->variance_cash ? $shift->variance_cash / 100 : null,
+                    'variance_cash' => $shift->variance_cash ? $shift->variance_cash : null,
                     'variance_floats' => $varianceFloatsFormatted,
                 ]
             ]);
@@ -624,17 +624,17 @@ class ShiftController extends Controller
                 'teller_name' => $shift->teller->name ?? null,
                 'treasurer_name' => $shift->treasurer->name ?? null,
                 'status' => $shift->status,
-                'closing_cash' => $shift->closing_cash ? $shift->closing_cash / 100 : null,
+                'closing_cash' => $shift->closing_cash ? $shift->closing_cash : null,
                 'closing_floats' => $shift->closing_floats ? array_map(function ($v) {
-                    return abs($v) / 100;
+                    return abs($v);
                 }, $shift->closing_floats) : null,
-                'expected_closing_cash' => $shift->expected_closing_cash ? $shift->expected_closing_cash / 100 : null,
+                'expected_closing_cash' => $shift->expected_closing_cash ? $shift->expected_closing_cash : null,
                 'expected_closing_floats' => $shift->expected_closing_floats ? array_map(function ($v) {
-                    return abs($v) / 100;
+                    return abs($v);
                 }, $shift->expected_closing_floats) : null,
-                'variance_cash' => $shift->variance_cash ? $shift->variance_cash / 100 : null,
+                'variance_cash' => $shift->variance_cash ? $shift->variance_cash : null,
                 'variance_floats' => $shift->variance_floats ? array_map(function ($v) {
-                    return $v / 100;
+                    return $v;
                 }, $shift->variance_floats) : null,
                 'notes' => $shift->notes,
             ]
@@ -680,7 +680,7 @@ class ShiftController extends Controller
                 foreach ($request->adjustments as $adjustment) {
                     $adjustments[] = [
                         'account_id' => $adjustment['account_id'],
-                        'amount' => (int)($adjustment['amount'] * 100), // Convert to cents
+                        'amount' => (int)$adjustment['amount'], // Amounts are in currency format
                         'reason' => $adjustment['reason'] ?? 'Reconciliation adjustment',
                     ];
                 }

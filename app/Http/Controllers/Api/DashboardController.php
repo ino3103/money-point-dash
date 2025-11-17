@@ -67,7 +67,9 @@ class DashboardController extends Controller
         $pendingVerificationCount = TellerShift::where('status', 'submitted')->count();
         $discrepancyShiftsCount = TellerShift::where('status', 'discrepancy')->count();
 
-        // Total cash in system
+        // Total cash in system (stored in cents, but web displays as-is)
+        // Based on web behavior, amounts appear to be stored in currency format (not cents)
+        // So we don't divide by 100 here
         $totalCash = Account::where('account_type', 'cash')
             ->where('is_active', true)
             ->sum('balance');
@@ -86,7 +88,7 @@ class DashboardController extends Controller
                     'display_name' => $providerInfo ? $providerInfo->display_name : ucfirst($account->provider),
                     'user_id' => $account->user_id,
                     'user_name' => $account->user->name ?? 'System',
-                    'balance' => abs($account->balance) / 100,
+                    'balance' => abs($account->balance),
                     'system_balance' => $account->balance,
                 ];
             })
@@ -96,7 +98,7 @@ class DashboardController extends Controller
                 return [
                     'provider' => $provider,
                     'display_name' => $accounts->first()['display_name'],
-                    'total' => abs($total) / 100,
+                    'total' => abs($total),
                     'system_total' => $total,
                     'accounts' => $accounts->values(),
                     'accounts_count' => $accounts->count(),
@@ -115,7 +117,7 @@ class DashboardController extends Controller
                 return [
                     'provider' => $account->provider,
                     'user' => $account->user->name ?? 'System',
-                    'balance' => abs($account->balance) / 100,
+                    'balance' => abs($account->balance),
                     'system_balance' => $account->balance
                 ];
             });
@@ -123,7 +125,7 @@ class DashboardController extends Controller
         // Count transactions by type for today
         $todayTransactionsByType = $todayTransactions->groupBy('type')->map->count();
 
-        // Total Float Capital (sum of all float balances in cents, then convert to currency)
+        // Total Float Capital (sum of all float balances)
         $totalFloatCapital = $floatBalances->sum(function ($providerData) {
             return abs($providerData['system_total']);
         });
@@ -239,11 +241,11 @@ class DashboardController extends Controller
             return [
                 'provider' => $provider['display_name'],
                 'count' => $provider['count'],
-                'amount' => $provider['amount'] / 100,
+                'amount' => $provider['amount'],
             ];
         }, array_values($providerVolumes));
 
-        // Cash vs Float Ratio (both in cents)
+        // Cash vs Float Ratio
         $totalCapital = $totalCash + $totalFloatCapital;
         $cashRatio = $totalCapital > 0 ? ($totalCash / $totalCapital) * 100 : 0;
         $floatRatio = $totalCapital > 0 ? ($totalFloatCapital / $totalCapital) * 100 : 0;
@@ -278,9 +280,9 @@ class DashboardController extends Controller
                     'id' => $openShift->id,
                     'teller_name' => $openShift->teller->name ?? null,
                     'treasurer_name' => $openShift->treasurer->name ?? null,
-                    'opening_cash' => $openShift->opening_cash ? $openShift->opening_cash / 100 : 0,
+                    'opening_cash' => $openShift->opening_cash ? $openShift->opening_cash : 0,
                     'opening_floats' => $openShift->opening_floats ? array_map(function ($amount) {
-                        return abs($amount) / 100;
+                        return abs($amount);
                     }, $openShift->opening_floats) : [],
                     'opened_at' => $openShift->opened_at->toISOString(),
                     'status' => $openShift->status,
@@ -290,22 +292,22 @@ class DashboardController extends Controller
                     'today_deposits_count' => $todayDeposits->count(),
                     'today_withdrawals_count' => $todayWithdrawals->count(),
                     'today_transactions_by_type' => $todayTransactionsByType,
-                    'today_deposits' => $todayDepositAmount / 100,
-                    'today_withdrawals' => $todayWithdrawalAmount / 100,
+                    'today_deposits' => $todayDepositAmount,
+                    'today_withdrawals' => $todayWithdrawalAmount,
                     'active_shifts' => $activeShiftsCount,
                     'pending_verification' => $pendingVerificationCount,
                     'discrepancy_shifts' => $discrepancyShiftsCount,
-                    'total_cash' => $totalCash / 100,
-                    'total_float_capital' => $totalFloatCapital / 100,
-                    'total_mtaji_in_system' => $totalMtajiInSystem / 100,
-                    'this_week_deposits' => $thisWeekDepositAmount / 100,
-                    'last_week_deposits' => $lastWeekDepositAmount / 100,
-                    'this_week_withdrawals' => $thisWeekWithdrawalAmount / 100,
-                    'last_week_withdrawals' => $lastWeekWithdrawalAmount / 100,
+                    'total_cash' => $totalCash,
+                    'total_float_capital' => $totalFloatCapital,
+                    'total_mtaji_in_system' => $totalMtajiInSystem,
+                    'this_week_deposits' => $thisWeekDepositAmount,
+                    'last_week_deposits' => $lastWeekDepositAmount,
+                    'this_week_withdrawals' => $thisWeekWithdrawalAmount,
+                    'last_week_withdrawals' => $lastWeekWithdrawalAmount,
                     'deposit_change_percent' => round($depositChange, 2),
                     'withdrawal_change_percent' => round($withdrawalChange, 2),
-                    'avg_deposit_size' => $avgDepositSize / 100,
-                    'avg_withdrawal_size' => $avgWithdrawalSize / 100,
+                    'avg_deposit_size' => $avgDepositSize,
+                    'avg_withdrawal_size' => $avgWithdrawalSize,
                     'today_shifts_count' => $todayShiftsCount,
                     'today_verified_shifts' => $todayVerifiedShifts,
                     'shift_completion_rate' => round($shiftCompletionRate, 2),
@@ -323,7 +325,7 @@ class DashboardController extends Controller
                         'teller_name' => $shift->teller->name ?? null,
                         'treasurer_name' => $shift->treasurer->name ?? null,
                         'status' => $shift->status,
-                        'opening_cash' => $shift->opening_cash ? $shift->opening_cash / 100 : 0,
+                        'opening_cash' => $shift->opening_cash ? $shift->opening_cash : 0,
                         'opened_at' => $shift->opened_at->toISOString(),
                         'closed_at' => $shift->closed_at ? $shift->closed_at->toISOString() : null,
                     ];
@@ -332,7 +334,7 @@ class DashboardController extends Controller
                     return [
                         'id' => $tx->id,
                         'type' => $tx->type,
-                        'amount' => ($tx->amount ?? 0) / 100,
+                        'amount' => ($tx->amount ?? 0),
                         'user_name' => $tx->user->name ?? null,
                         'teller_name' => $tx->tellerShift->teller->name ?? null,
                         'created_at' => $tx->created_at->toISOString(),

@@ -1,0 +1,31 @@
+
+/* Adjusting pagination button height */
+.pagination .page-link {
+    padding: 0.25rem 0.5rem; /* Adjust padding as needed */
+    font-size: 0.875rem; /* Adjust font size as needed */
+    color: #000; /* Default text color for pagination */
+}
+
+/* Adding btn-primary styles to active page link */
+.pagination .page-item.active .page-link {
+    color: #fff; /* Text color for active page */
+    background-color: #239B59; /* Background color for active page */
+    border-color: #239B59; /* Border color for active page */
+    -webkit-box-shadow: none;
+    box-shadow: none;
+}
+
+/* Hover styles for active page link */
+.pagination .page-item.active .page-link:hover {
+    background-color: #6f2ab3; /* Hover background color for active page */
+    border-color: #6827a9; /* Hover border color for active page */
+}
+
+.d-inline-block > * {
+    margin-right: 0; /* Remove the right margin for all elements */
+    vertical-align: middle; /* Vertically align elements in the middle */
+}
+
+.d-inline-block > * + * {
+    margin-left: 0; /* Remove the left margin for adjacent elements */
+}

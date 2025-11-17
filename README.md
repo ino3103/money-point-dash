@@ -1,6 +1,6 @@
-# Money Point - Standalone Application
+# Money PointDashboard
 
-This is a standalone Laravel application for managing Money Point operations, replicated from the main josesacos project.
+This is a standalone Laravel application for managing Money Point operations.
 
 ## Features
 

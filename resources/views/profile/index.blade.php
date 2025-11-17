@@ -41,9 +41,13 @@
                                                 $createdAt = Auth::user()->created_at;
                                                 $dateFormat = getSetting('date_format', 'Y-m-d');
                                                 $timeFormat = getSetting('time_format', 'H:i:s');
-                                                $formattedDate = Carbon\Carbon::parse($createdAt)->format(
-                                                    "$dateFormat $timeFormat",
-                                                );
+                                                $timezone = getSetting('timezone', 'UTC');
+
+                                                $regDate = Carbon\Carbon::parse($createdAt);
+                                                if ($timezone && $timezone !== 'UTC') {
+                                                    $regDate->setTimezone($timezone);
+                                                }
+                                                $formattedDate = $regDate->format($dateFormat . ' ' . $timeFormat);
                                             @endphp
                                             <p class="ap-nameAddress__subTitle fs-14 m-0">
                                                 <b>Reg Date: &nbsp;</b> {{ $formattedDate }}
@@ -105,36 +109,76 @@
                                                                 id="loginHistoryTable">
                                                                 <thead>
                                                                     <tr>
-                                                                        <th>ID</th>
-                                                                        <th>User</th>
-                                                                        <th>IP Address</th>
-                                                                        <th>User Agent</th>
-                                                                        <th>Login At</th>
+                                                                        <th style="width: 5%;">ID</th>
+                                                                        <th style="width: 20%;">User</th>
+                                                                        <th style="width: 15%;">IP Address</th>
+                                                                        <th style="width: 30%;">User Agent</th>
+                                                                        <th style="width: 20%;">Login At</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
-                                                                    @foreach ($data['loginHistories'] as $index => $login)
+                                                                    @forelse ($data['loginHistories'] ?? [] as $index => $login)
                                                                         <tr>
                                                                             <td>{{ $index + 1 }}</td>
                                                                             <td>
-                                                                                @if($login->user)
-                                                                                    {{ $login->user->name }} ({{ $login->user->username }})
+                                                                                @if ($login->user)
+                                                                                    {{ $login->user->name }}
+                                                                                    ({{ $login->user->username }})
                                                                                 @else
                                                                                     N/A
                                                                                 @endif
                                                                             </td>
                                                                             <td>{{ $login->ip_address }}</td>
-                                                                            <td>{{ $login->user_agent }}</td>
+                                                                            <td>{{ Str::limit($login->user_agent, 50) }}
+                                                                            </td>
                                                                             <td>
                                                                                 @php
-                                                                                    $dateFormat = getSetting('date_format', 'Y-m-d');
-                                                                                    $timeFormat = getSetting('time_format', 'H:i:s');
-                                                                                    $formattedDate = $login->login_at ? Carbon\Carbon::parse($login->login_at)->format("$dateFormat $timeFormat") : 'N/A';
+                                                                                    $dateFormat = getSetting(
+                                                                                        'date_format',
+                                                                                        'Y-m-d',
+                                                                                    );
+                                                                                    $timeFormat = getSetting(
+                                                                                        'time_format',
+                                                                                        'H:i:s',
+                                                                                    );
+                                                                                    $timezone = getSetting(
+                                                                                        'timezone',
+                                                                                        'UTC',
+                                                                                    );
+
+                                                                                    if ($login->login_at) {
+                                                                                        $loginDate = Carbon\Carbon::parse(
+                                                                                            $login->login_at,
+                                                                                        );
+                                                                                        if (
+                                                                                            $timezone &&
+                                                                                            $timezone !== 'UTC'
+                                                                                        ) {
+                                                                                            $loginDate->setTimezone(
+                                                                                                $timezone,
+                                                                                            );
+                                                                                        }
+                                                                                        $formattedDate = $loginDate->format(
+                                                                                            $dateFormat .
+                                                                                                ' ' .
+                                                                                                $timeFormat,
+                                                                                        );
+                                                                                    } else {
+                                                                                        $formattedDate = 'N/A';
+                                                                                    }
                                                                                 @endphp
                                                                                 {{ $formattedDate }}
                                                                             </td>
                                                                         </tr>
-                                                                    @endforeach
+                                                                    @empty
+                                                                        <tr>
+                                                                            <td colspan="5" class="text-center py-4">
+                                                                                <p class="text-muted mb-0">No login history
+                                                                                    found. Login histories will appear here
+                                                                                    after you log in.</p>
+                                                                            </td>
+                                                                        </tr>
+                                                                    @endforelse
                                                                 </tbody>
                                                             </table>
                                                         </div>
@@ -220,7 +264,30 @@
                 pageLength: defaultPageLength,
                 autoWidth: false,
                 responsive: true,
-                order: [[4, 'desc']] // Sort by login_at descending
+                order: [
+                    [4, 'desc']
+                ], // Sort by login_at descending
+                columnDefs: [{
+                        width: "5%",
+                        targets: 0
+                    }, // ID column - narrow
+                    {
+                        width: "20%",
+                        targets: 1
+                    }, // User column
+                    {
+                        width: "15%",
+                        targets: 2
+                    }, // IP Address column
+                    {
+                        width: "30%",
+                        targets: 3
+                    }, // User Agent column
+                    {
+                        width: "20%",
+                        targets: 4
+                    } // Login At column
+                ]
             });
         });
     </script>

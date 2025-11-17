@@ -1,9 +1,8 @@
 <div class="modal fade" id="updatePasswordModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form action="{{ route('profile.password.update') }}" id="editForm" method="POST">
+            <form action="{{ route('profile.password-update') }}" id="editForm" method="POST">
                 @csrf
-                @method('PUT')
                 <div class="modal-header">
                     <h5 class="modal-title" id="updatePasswordModalLabel">Update Password</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

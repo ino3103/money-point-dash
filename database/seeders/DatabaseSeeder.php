@@ -14,8 +14,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             PermissionsTableSeeder::class,
+            SettingsTableSeeder::class,
+            FloatProvidersTableSeeder::class,
             AdminUserSeeder::class,
-            SettingsTableSeeder::class
         ]);
     }
 }

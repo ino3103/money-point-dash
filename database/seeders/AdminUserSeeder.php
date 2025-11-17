@@ -19,80 +19,171 @@ class AdminUserSeeder extends Seeder
         \DB::beginTransaction();
 
         try {
-            $adminEmail = env('ADMIN_EMAIL');
-            $adminName = env('ADMIN_NAME');
-            $adminUserName = env('ADMIN_USER_NAME');
-            $adminPassword = env('ADMIN_PASSWORD');
-
-            $errors = [];
-
-            // Check if the admin email is set in the .env file
-            if (empty($adminEmail)) {
-                $errors[] = 'Admin email is not set in the .env file.';
-            }
-
-            // Check if the admin name is set in the .env file
-            if (empty($adminName)) {
-                $errors[] = 'Admin name is not set in the .env file.';
-            }
-
-            // Check if the admin username is set in the .env file
-            if (empty($adminUserName)) {
-                $errors[] = 'Admin username is not set in the .env file.';
-            }
-
-            // Check if the admin password is set in the .env file
-            if (empty($adminPassword)) {
-                $errors[] = 'Admin password is not set in the .env file.';
-            }
-
-            // If any errors occurred, throw an exception
-            if (!empty($errors)) {
-                throw new \Exception(implode("\n", $errors));
-            }
-
-            // Create the Admin role if it doesn't exist
-            $adminRole = Role::firstOrCreate(['name' => 'Admin']);
-
             // Fetch all permissions
-            $permissions = Permission::all();
+            $allPermissions = Permission::all();
 
-            // Sync all permissions to the Admin role
-            $adminRole->syncPermissions($permissions);
+            // Define role permissions
+            $rolePermissions = [
+                'Super Admin' => $allPermissions->pluck('name')->toArray(), // All permissions
 
-            // Create the Admin user if it doesn't exist
-            $adminUser = User::firstOrCreate(
-                ['email' => $adminEmail],
+                'Treasurer' => [
+                    // Profile Management
+                    'Edit Own Details',
+                    'Change Password',
+
+                    // Money Point - View and Verify
+                    'View Money Point Module',
+                    'View Shifts',
+                    'Verify Shifts',
+                    'View Accounts',
+                    'View Money Point Transactions',
+                    'View Ledger',
+                    'View Money Point Reports',
+                ],
+
+                'Teller' => [
+                    // Profile Management
+                    'Edit Own Details',
+                    'Change Password',
+
+                    // Money Point - Operational
+                    'View Money Point Module',
+                    'View Shifts',
+                    'Open Shifts',
+                    'Submit Shifts',
+                    'View Accounts',
+                    'View Money Point Transactions',
+                    'Create Withdrawals',
+                    'Create Deposits',
+                ],
+            ];
+
+            // Create roles and assign permissions
+            foreach ($rolePermissions as $roleName => $permissionNames) {
+                // Check if role already exists
+                $role = Role::where('name', $roleName)->first();
+
+                if (!$role) {
+                    $role = Role::create(['name' => $roleName]);
+                    $this->command->info("Created new role: {$roleName}");
+                } else {
+                    $this->command->info("Role already exists: {$roleName}");
+                }
+
+                // Get permission IDs - filter out non-existent permissions
+                $permissions = Permission::whereIn('name', $permissionNames)->get();
+                $foundPermissionNames = $permissions->pluck('name')->toArray();
+                $missingPermissions = array_diff($permissionNames, $foundPermissionNames);
+
+                if (!empty($missingPermissions)) {
+                    $this->command->warn("  → Missing permissions: " . implode(', ', $missingPermissions));
+                }
+
+                // Sync permissions (replaces existing permissions, preventing duplicates)
+                $role->syncPermissions($permissions);
+
+                $this->command->info("  → Synced {$permissions->count()} permissions to role: {$roleName}");
+            }
+
+            // Create users for each role
+            $users = [
                 [
-                    'name' => $adminName,
-                    'username' => $adminUserName,
-                    'password' => Hash::make($adminPassword),
-                ]
-            );
+                    'name' => 'Super Admin',
+                    'email' => 'superadmin@moneypoint.com',
+                    'username' => 'superadmin',
+                    'password' => Hash::make('password'),
+                    'status' => 1, // Active
+                    'role' => 'Super Admin',
+                ],
+                [
+                    'name' => 'Treasurer',
+                    'email' => 'treasurer@moneypoint.com',
+                    'username' => 'treasurer',
+                    'password' => Hash::make('password'),
+                    'status' => 1, // Active
+                    'role' => 'Treasurer',
+                ],
+                [
+                    'name' => 'Teller',
+                    'email' => 'teller@moneypoint.com',
+                    'username' => 'teller',
+                    'password' => Hash::make('password'),
+                    'status' => 1, // Active
+                    'role' => 'Teller',
+                ],
+            ];
 
-            // Assign the Admin role to the Admin user
-            $adminUser->assignRole([$adminRole->id]);
+            foreach ($users as $userData) {
+                $roleName = $userData['role'];
+                $role = Role::where('name', $roleName)->first();
+
+                if (!$role) {
+                    $this->command->warn("Role '{$roleName}' not found. Skipping user creation.");
+                    continue;
+                }
+
+                // Check if user already exists
+                $user = User::where('email', $userData['email'])->first();
+
+                if ($user) {
+                    // User exists - update only if needed, but don't overwrite password
+                    $updateData = [
+                        'name' => $userData['name'],
+                        'username' => $userData['username'],
+                        'status' => $userData['status'],
+                    ];
+
+                    // Only update fields that have changed
+                    $needsUpdate = false;
+                    foreach ($updateData as $key => $value) {
+                        if ($user->$key != $value) {
+                            $needsUpdate = true;
+                            break;
+                        }
+                    }
+
+                    if ($needsUpdate) {
+                        $user->update($updateData);
+                        $this->command->info("Updated existing user: {$user->name} ({$user->email})");
+                    } else {
+                        $this->command->info("User already exists: {$user->name} ({$user->email})");
+                    }
+                } else {
+                    // User doesn't exist - create new user
+                    unset($userData['role']);
+                    $user = User::create($userData);
+                    $this->command->info("Created new user: {$user->name} ({$user->email})");
+                }
+
+                // Sync roles to prevent duplicates (replaces existing roles with the specified one)
+                $currentRoles = $user->roles->pluck('name')->toArray();
+                $user->syncRoles([$roleName]);
+
+                if (in_array($roleName, $currentRoles)) {
+                    $this->command->info("  → User already has role: {$roleName} (synced to ensure no duplicates)");
+                } else {
+                    $this->command->info("  → Assigned role: {$roleName}");
+                }
+            }
 
             // Commit the transaction if all operations are successful
             \DB::commit();
 
-            // Display success message
-            $assignedPermissions = $adminRole->permissions->pluck('name');
-            $this->command->info("Admin role assigned the following permissions:\n" . $assignedPermissions->implode("\n"));
-            $this->command->info("Admin user created with email: {$adminUser->email}");
-
-            // Display details of all created users vertically
-            $allUsers = User::all();
-            foreach ($allUsers as $user) {
-                $userDetails = "User created with email: {$user->email}, name: {$user->name}, username: {$user->username}";
-                $this->command->info($userDetails);
+            $this->command->info("\n=== Summary ===");
+            $this->command->info("Roles created: " . implode(', ', array_keys($rolePermissions)));
+            $this->command->info("\nUsers created:");
+            foreach ($users as $userData) {
+                $this->command->info("  - {$userData['name']} ({$userData['email']}) - Role: {$userData['role']}");
             }
+            $this->command->info("\nDefault password for all users: password");
+            $this->command->warn("Please change the default passwords after first login!");
         } catch (\Exception $e) {
             // Roll back the transaction if an error occurs
             \DB::rollBack();
 
             // Display error message
-            $this->command->error($e->getMessage());
+            $this->command->error("Error occurred: " . $e->getMessage());
+            $this->command->error($e->getTraceAsString());
         }
     }
 }

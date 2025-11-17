@@ -1,0 +1,19 @@
+# Enable rewrite engine
+RewriteEngine On
+
+# Redirect root to index.php (landing page)
+RewriteRule ^$ index.php [L]
+
+# API endpoint - /api maps to /api/index.php
+RewriteRule ^api/?$ api/index.php [L]
+RewriteRule ^api/(.*)$ api/index.php?$1 [L,QSA]
+
+# Redirect endpoint - /redirect maps to /redirect/index.php
+RewriteRule ^redirect/?$ redirect/index.php [L]
+RewriteRule ^redirect/(.*)$ redirect/index.php?$1 [L,QSA]
+
+# Prevent direct access to JSON config file
+RewriteRule ^domains\.json$ - [F,L]
+
+# Prevent directory listing
+Options -Indexes

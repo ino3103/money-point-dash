@@ -56,6 +56,32 @@ class ShiftController extends Controller
         return response()->json([
             'success' => true,
             'data' => $shifts->map(function ($shift) {
+                // Format opening floats preserving keys
+                $openingFloatsFormatted = [];
+                if ($shift->opening_floats) {
+                    foreach ($shift->opening_floats as $provider => $amount) {
+                        $openingFloatsFormatted[$provider] = abs($amount) / 100;
+                    }
+                }
+
+                // Format closing floats preserving keys
+                $closingFloatsFormatted = null;
+                if ($shift->closing_floats) {
+                    $closingFloatsFormatted = [];
+                    foreach ($shift->closing_floats as $provider => $amount) {
+                        $closingFloatsFormatted[$provider] = abs($amount) / 100;
+                    }
+                }
+
+                // Format variance floats preserving keys
+                $varianceFloatsFormatted = null;
+                if ($shift->variance_floats) {
+                    $varianceFloatsFormatted = [];
+                    foreach ($shift->variance_floats as $provider => $amount) {
+                        $varianceFloatsFormatted[$provider] = $amount / 100;
+                    }
+                }
+
                 return [
                     'id' => $shift->id,
                     'teller_id' => $shift->teller_id,
@@ -64,17 +90,11 @@ class ShiftController extends Controller
                     'treasurer_name' => $shift->treasurer->name ?? null,
                     'status' => $shift->status,
                     'opening_cash' => $shift->opening_cash ? $shift->opening_cash / 100 : 0,
-                    'opening_floats' => $shift->opening_floats ? array_map(function ($v) {
-                        return $v / 100;
-                    }, $shift->opening_floats) : [],
+                    'opening_floats' => $openingFloatsFormatted,
                     'closing_cash' => $shift->closing_cash ? $shift->closing_cash / 100 : null,
-                    'closing_floats' => $shift->closing_floats ? array_map(function ($v) {
-                        return $v / 100;
-                    }, $shift->closing_floats) : null,
+                    'closing_floats' => $closingFloatsFormatted,
                     'variance_cash' => $shift->variance_cash ? $shift->variance_cash / 100 : null,
-                    'variance_floats' => $shift->variance_floats ? array_map(function ($v) {
-                        return $v / 100;
-                    }, $shift->variance_floats) : null,
+                    'variance_floats' => $varianceFloatsFormatted,
                     'opened_at' => $shift->opened_at->toISOString(),
                     'closed_at' => $shift->closed_at ? $shift->closed_at->toISOString() : null,
                     'notes' => $shift->notes,
@@ -135,12 +155,16 @@ class ShiftController extends Controller
                 if ($floatLine) {
                     $actualStartingFloats[$provider] = abs($floatLine->balance_after);
                 }
+            } else {
+                // If no allocation transaction found, use the stored opening float value
+                $actualStartingFloats[$provider] = abs($amount);
             }
         }
 
         // Calculate Mtaji (Opening Capital) = Actual Starting Cash + Sum of Actual Starting Floats
+        // All values are in cents, so we sum them first, then divide by 100
         $mtaji = $actualStartingCash;
-        foreach ($actualStartingFloats as $amount) {
+        foreach ($actualStartingFloats as $provider => $amount) {
             $mtaji += abs($amount);
         }
 
@@ -208,7 +232,7 @@ class ShiftController extends Controller
                 'actual_starting_floats' => array_map(function ($v) {
                     return abs($v) / 100;
                 }, $actualStartingFloats),
-                'mtaji' => $mtaji / 100, // Opening Capital
+                'mtaji' => $mtaji / 100, // Opening Capital (Cash + Sum of all Floats)
                 'closing_cash' => $shift->closing_cash ? $shift->closing_cash / 100 : null,
                 'closing_floats' => $closingFloatsFormatted,
                 'expected_closing_cash' => $shift->expected_closing_cash ? $shift->expected_closing_cash / 100 : null,

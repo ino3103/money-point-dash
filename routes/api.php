@@ -33,39 +33,42 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     // Authentication
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/user', [AuthController::class, 'user']);
-    
+
     // Profile
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
     Route::get('/profile/login-history', [ProfileController::class, 'loginHistory']);
-    
+
     // Dashboard
     Route::get('/money-point/dashboard', [DashboardController::class, 'index']);
-    
+
     // Shifts
     Route::get('/money-point/shifts', [ShiftController::class, 'index']);
+    Route::get('/money-point/shifts/create', [ShiftController::class, 'create']);
     Route::get('/money-point/shifts/{id}', [ShiftController::class, 'show']);
+    Route::get('/money-point/shifts/{id}/submit', [ShiftController::class, 'submitForm']);
+    Route::get('/money-point/shifts/{id}/verify', [ShiftController::class, 'verifyForm']);
     Route::post('/money-point/shifts', [ShiftController::class, 'store']);
     Route::post('/money-point/shifts/{id}/submit', [ShiftController::class, 'submit']);
     Route::post('/money-point/shifts/{id}/verify', [ShiftController::class, 'verify']);
-    
+
     // Accounts
     Route::get('/money-point/accounts', [AccountController::class, 'index']);
     Route::get('/money-point/accounts/{id}/ledger', [AccountController::class, 'ledger']);
-    
+
     // Transactions
     Route::get('/money-point/transactions', [TransactionController::class, 'index']);
     Route::get('/money-point/transactions/{id}', [TransactionController::class, 'show']);
     Route::post('/money-point/transactions/withdraw', [TransactionController::class, 'withdraw']);
     Route::post('/money-point/transactions/deposit', [TransactionController::class, 'deposit']);
-    
+
     // Float Providers
     Route::get('/money-point/float-providers', [FloatProviderController::class, 'index']);
     Route::post('/money-point/float-providers', [FloatProviderController::class, 'store']);
     Route::put('/money-point/float-providers/{id}', [FloatProviderController::class, 'update']);
     Route::post('/money-point/float-providers/{id}/toggle', [FloatProviderController::class, 'toggle']);
-    
+
     // Reports
     Route::get('/money-point/reports/shift-summary', [ReportController::class, 'shiftSummary']);
     Route::get('/money-point/reports/transactions', [ReportController::class, 'transactions']);
@@ -73,7 +76,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::get('/money-point/reports/variance', [ReportController::class, 'variance']);
     Route::get('/money-point/reports/daily-summary', [ReportController::class, 'dailySummary']);
     Route::get('/money-point/reports/teller-performance', [ReportController::class, 'tellerPerformance']);
-    
+
     // Users Management (Admin)
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/{id}', [UserController::class, 'show']);
@@ -81,14 +84,14 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::put('/users/{id}', [UserController::class, 'update']);
     Route::put('/users/{id}/toggle-status', [UserController::class, 'toggleStatus']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
-    
+
     // Roles Management (Admin)
     Route::get('/roles', [RoleController::class, 'index']);
     Route::get('/roles/{id}', [RoleController::class, 'show']);
     Route::post('/roles', [RoleController::class, 'store']);
     Route::put('/roles/{id}', [RoleController::class, 'update']);
     Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
-    
+
     // Settings Management (Admin)
     Route::get('/settings', [SettingController::class, 'index']);
     Route::put('/settings', [SettingController::class, 'update']);
@@ -99,4 +102,3 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::put('/settings/sms', [SettingController::class, 'updateSmsSettings']);
     Route::post('/settings/sms/test', [SettingController::class, 'testSms']);
 });
-

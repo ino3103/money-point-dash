@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\TellerShift;
 use App\Models\User;
+use App\Models\FloatProvider;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -63,11 +64,17 @@ class ShiftController extends Controller
                     'treasurer_name' => $shift->treasurer->name ?? null,
                     'status' => $shift->status,
                     'opening_cash' => $shift->opening_cash ? $shift->opening_cash / 100 : 0,
-                    'opening_floats' => $shift->opening_floats ? array_map(function($v) { return $v / 100; }, $shift->opening_floats) : [],
+                    'opening_floats' => $shift->opening_floats ? array_map(function ($v) {
+                        return $v / 100;
+                    }, $shift->opening_floats) : [],
                     'closing_cash' => $shift->closing_cash ? $shift->closing_cash / 100 : null,
-                    'closing_floats' => $shift->closing_floats ? array_map(function($v) { return $v / 100; }, $shift->closing_floats) : null,
+                    'closing_floats' => $shift->closing_floats ? array_map(function ($v) {
+                        return $v / 100;
+                    }, $shift->closing_floats) : null,
                     'variance_cash' => $shift->variance_cash ? $shift->variance_cash / 100 : null,
-                    'variance_floats' => $shift->variance_floats ? array_map(function($v) { return $v / 100; }, $shift->variance_floats) : null,
+                    'variance_floats' => $shift->variance_floats ? array_map(function ($v) {
+                        return $v / 100;
+                    }, $shift->variance_floats) : null,
                     'opened_at' => $shift->opened_at->toISOString(),
                     'closed_at' => $shift->closed_at ? $shift->closed_at->toISOString() : null,
                     'notes' => $shift->notes,
@@ -91,6 +98,101 @@ class ShiftController extends Controller
         $shift = TellerShift::with(['teller', 'treasurer', 'transactions.user', 'transactions.lines.account'])
             ->findOrFail($id);
 
+        // Get provider display names
+        $providerNames = [];
+        if ($shift->opening_floats) {
+            foreach ($shift->opening_floats as $provider => $amount) {
+                $providerModel = FloatProvider::where('name', $provider)->first();
+                $providerNames[$provider] = $providerModel ? $providerModel->display_name : ucfirst($provider);
+            }
+        }
+
+        // Calculate actual starting balances from transaction lines (after allocation)
+        $actualStartingCash = $shift->opening_cash;
+        $actualStartingFloats = $shift->opening_floats ?? [];
+
+        // Get cash account balance after allocation transaction
+        $cashAllocationTx = $shift->transactions->where('type', 'allocation')
+            ->where('metadata->allocation_type', 'cash')
+            ->first();
+        if ($cashAllocationTx) {
+            $cashLine = $cashAllocationTx->lines->where('account.account_type', 'cash')->first();
+            if ($cashLine) {
+                $actualStartingCash = $cashLine->balance_after;
+            }
+        }
+
+        // Get float account balances after allocation transactions
+        foreach ($shift->opening_floats ?? [] as $provider => $amount) {
+            $floatAllocationTx = $shift->transactions->where('type', 'allocation')
+                ->where('metadata->allocation_type', 'float')
+                ->where('metadata->provider', $provider)
+                ->first();
+            if ($floatAllocationTx) {
+                $floatLine = $floatAllocationTx->lines->where('account.account_type', 'float')
+                    ->where('account.provider', $provider)
+                    ->first();
+                if ($floatLine) {
+                    $actualStartingFloats[$provider] = abs($floatLine->balance_after);
+                }
+            }
+        }
+
+        // Calculate Mtaji (Opening Capital) = Actual Starting Cash + Sum of Actual Starting Floats
+        $mtaji = $actualStartingCash;
+        foreach ($actualStartingFloats as $amount) {
+            $mtaji += abs($amount);
+        }
+
+        // Calculate Balanced (Closing Capital) = Closing Cash + Sum of Closing Floats (if submitted)
+        $balanced = null;
+        if ($shift->closing_cash !== null) {
+            $balanced = $shift->closing_cash;
+            if ($shift->closing_floats) {
+                foreach ($shift->closing_floats as $amount) {
+                    $balanced += abs($amount);
+                }
+            }
+        }
+
+        // Format opening floats with provider names
+        $openingFloatsFormatted = [];
+        if ($shift->opening_floats) {
+            foreach ($shift->opening_floats as $provider => $amount) {
+                $openingFloatsFormatted[] = [
+                    'provider' => $provider,
+                    'display_name' => $providerNames[$provider] ?? ucfirst($provider),
+                    'amount' => abs($amount) / 100,
+                ];
+            }
+        }
+
+        // Format closing floats with provider names
+        $closingFloatsFormatted = null;
+        if ($shift->closing_floats) {
+            $closingFloatsFormatted = [];
+            foreach ($shift->closing_floats as $provider => $amount) {
+                $closingFloatsFormatted[] = [
+                    'provider' => $provider,
+                    'display_name' => $providerNames[$provider] ?? ucfirst($provider),
+                    'amount' => abs($amount) / 100,
+                ];
+            }
+        }
+
+        // Format variance floats
+        $varianceFloatsFormatted = null;
+        if ($shift->variance_floats) {
+            $varianceFloatsFormatted = [];
+            foreach ($shift->variance_floats as $provider => $amount) {
+                $varianceFloatsFormatted[] = [
+                    'provider' => $provider,
+                    'display_name' => $providerNames[$provider] ?? ucfirst($provider),
+                    'amount' => $amount / 100,
+                ];
+            }
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -101,16 +203,26 @@ class ShiftController extends Controller
                 'treasurer_name' => $shift->treasurer->name ?? null,
                 'status' => $shift->status,
                 'opening_cash' => $shift->opening_cash ? $shift->opening_cash / 100 : 0,
-                'opening_floats' => $shift->opening_floats ? array_map(function($v) { return $v / 100; }, $shift->opening_floats) : [],
+                'opening_floats' => $openingFloatsFormatted,
+                'actual_starting_cash' => $actualStartingCash / 100,
+                'actual_starting_floats' => array_map(function ($v) {
+                    return abs($v) / 100;
+                }, $actualStartingFloats),
+                'mtaji' => $mtaji / 100, // Opening Capital
                 'closing_cash' => $shift->closing_cash ? $shift->closing_cash / 100 : null,
-                'closing_floats' => $shift->closing_floats ? array_map(function($v) { return $v / 100; }, $shift->closing_floats) : null,
+                'closing_floats' => $closingFloatsFormatted,
                 'expected_closing_cash' => $shift->expected_closing_cash ? $shift->expected_closing_cash / 100 : null,
-                'expected_closing_floats' => $shift->expected_closing_floats ? array_map(function($v) { return $v / 100; }, $shift->expected_closing_floats) : null,
+                'expected_closing_floats' => $shift->expected_closing_floats ? array_map(function ($v) {
+                    return abs($v) / 100;
+                }, $shift->expected_closing_floats) : null,
                 'variance_cash' => $shift->variance_cash ? $shift->variance_cash / 100 : null,
-                'variance_floats' => $shift->variance_floats ? array_map(function($v) { return $v / 100; }, $shift->variance_floats) : null,
+                'variance_floats' => $varianceFloatsFormatted,
+                'balanced' => $balanced ? $balanced / 100 : null, // Closing Capital
                 'opened_at' => $shift->opened_at->toISOString(),
                 'closed_at' => $shift->closed_at ? $shift->closed_at->toISOString() : null,
                 'notes' => $shift->notes,
+                'can_submit' => $shift->canSubmit(),
+                'can_verify' => $shift->canVerify(),
                 'transactions' => $shift->transactions->map(function ($tx) {
                     $cashLine = $tx->lines->firstWhere('account.account_type', 'cash');
                     return [
@@ -121,6 +233,69 @@ class ShiftController extends Controller
                         'created_at' => $tx->created_at->toISOString(),
                     ];
                 }),
+            ]
+        ]);
+    }
+
+    /**
+     * Get data needed for opening a shift (tellers, float providers, previous balances)
+     */
+    public function create(Request $request)
+    {
+        if ($request->user()->cannot('Open Shifts')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access Denied'
+            ], 403);
+        }
+
+        // Get users with Teller role
+        $tellers = User::whereHas('roles', function ($query) {
+            $query->where('name', 'Teller');
+        })->get()->map(function ($teller) {
+            return [
+                'id' => $teller->id,
+                'name' => $teller->name,
+                'email' => $teller->email,
+                'username' => $teller->username,
+            ];
+        });
+
+        // Get active float providers
+        $floatProviders = FloatProvider::getActive()->map(function ($provider) {
+            return [
+                'name' => $provider->name,
+                'display_name' => $provider->display_name,
+                'is_active' => $provider->is_active,
+            ];
+        });
+
+        // Get previous closing balances for each teller
+        $previousClosingBalances = [];
+        foreach ($tellers as $teller) {
+            $previousShift = TellerShift::where('teller_id', $teller['id'])
+                ->whereIn('status', ['verified', 'closed'])
+                ->whereNotNull('closing_cash')
+                ->orderByRaw('COALESCE(closed_at, updated_at) DESC')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($previousShift) {
+                $previousClosingBalances[$teller['id']] = [
+                    'cash' => $previousShift->closing_cash ? $previousShift->closing_cash / 100 : 0,
+                    'floats' => $previousShift->closing_floats ? array_map(function ($v) {
+                        return abs($v) / 100;
+                    }, $previousShift->closing_floats) : [],
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'tellers' => $tellers,
+                'float_providers' => $floatProviders,
+                'previous_closing_balances' => $previousClosingBalances,
             ]
         ]);
     }
@@ -138,9 +313,11 @@ class ShiftController extends Controller
         }
 
         $request->validate([
+            'teller_id' => 'required|exists:users,id',
             'opening_cash' => 'required|numeric|min:0',
             'opening_floats' => 'nullable|array',
-            'treasurer_id' => 'nullable|exists:users,id',
+            'use_previous_cash' => 'nullable|boolean',
+            'use_previous_float' => 'nullable|array',
         ]);
 
         // Convert amounts to cents (integers)
@@ -148,38 +325,64 @@ class ShiftController extends Controller
         $openingFloats = [];
         if ($request->opening_floats) {
             foreach ($request->opening_floats as $provider => $amount) {
-                $openingFloats[$provider] = (int)($amount * 100);
+                if ($amount > 0) {
+                    $openingFloats[$provider] = (int)($amount * 100);
+                }
             }
         }
 
-        // Check if user already has an open shift
-        $existingShift = TellerShift::where('teller_id', $request->user()->id)
-            ->where('status', 'open')
-            ->first();
-
-        if ($existingShift) {
+        // Validate amounts
+        if ($openingCash <= 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'You already have an open shift. Please close it first.'
+                'message' => 'Opening cash must be greater than 0.'
             ], 422);
         }
 
         try {
+            $teller = User::findOrFail($request->teller_id);
+
+            // Verify the user has the Teller role
+            if (!$teller->hasRole('Teller')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Selected user does not have the "Teller" role.'
+                ], 422);
+            }
+
+            // Check if teller already has an open shift
+            $existingShift = TellerShift::where('teller_id', $teller->id)
+                ->where('status', 'open')
+                ->first();
+
+            if ($existingShift) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Teller already has an open shift. Please close it first.'
+                ], 422);
+            }
+
+            // Get flags for using previous closing balances
+            $usePreviousCash = $request->input('use_previous_cash') === true || $request->input('use_previous_cash') === 1 || $request->input('use_previous_cash') === '1';
+            $usePreviousFloats = [];
+            if ($request->has('use_previous_float') && is_array($request->use_previous_float)) {
+                foreach ($request->use_previous_float as $provider => $value) {
+                    if ($value === true || $value === 1 || $value === '1') {
+                        $usePreviousFloats[$provider] = true;
+                    }
+                }
+            }
+
             DB::beginTransaction();
 
-            // Get treasurer (use provided treasurer_id or current user)
-            $treasurer = $request->treasurer_id 
-                ? User::findOrFail($request->treasurer_id)
-                : $request->user();
-
-            // Use AccountingService to open shift (it creates the shift and allocations)
+            // Use AccountingService to open shift
             $shift = $this->accountingService->openShift(
-                $treasurer,
-                $request->user(), // teller
+                $request->user(), // treasurer
+                $teller, // teller
                 $openingCash,
                 $openingFloats,
-                false, // usePreviousCash
-                [] // usePreviousFloats
+                $usePreviousCash,
+                $usePreviousFloats
             );
 
             DB::commit();
@@ -189,8 +392,15 @@ class ShiftController extends Controller
                 'message' => 'Shift opened successfully.',
                 'data' => [
                     'id' => $shift->id,
+                    'teller_id' => $shift->teller_id,
+                    'teller_name' => $shift->teller->name ?? null,
+                    'treasurer_id' => $shift->treasurer_id,
+                    'treasurer_name' => $shift->treasurer->name ?? null,
                     'status' => $shift->status,
                     'opening_cash' => $shift->opening_cash ? $shift->opening_cash / 100 : 0,
+                    'opening_floats' => $shift->opening_floats ? array_map(function ($v) {
+                        return abs($v) / 100;
+                    }, $shift->opening_floats) : [],
                     'opened_at' => $shift->opened_at->toISOString(),
                 ]
             ], 201);
@@ -201,6 +411,63 @@ class ShiftController extends Controller
                 'message' => 'Failed to open shift: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get shift data for submission form
+     */
+    public function submitForm(Request $request, $id)
+    {
+        if ($request->user()->cannot('Submit Shifts')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access Denied'
+            ], 403);
+        }
+
+        $shift = TellerShift::with(['teller'])->findOrFail($id);
+
+        if (!$shift->canSubmit() || $shift->teller_id != $request->user()->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot submit this shift.'
+            ], 403);
+        }
+
+        // Get provider display names
+        $providerNames = [];
+        if ($shift->opening_floats) {
+            foreach ($shift->opening_floats as $provider => $amount) {
+                $providerModel = FloatProvider::where('name', $provider)->first();
+                $providerNames[$provider] = $providerModel ? $providerModel->display_name : ucfirst($provider);
+            }
+        }
+
+        // Format opening floats with provider names
+        $openingFloatsFormatted = [];
+        if ($shift->opening_floats) {
+            foreach ($shift->opening_floats as $provider => $amount) {
+                $openingFloatsFormatted[] = [
+                    'provider' => $provider,
+                    'display_name' => $providerNames[$provider] ?? ucfirst($provider),
+                    'amount' => abs($amount) / 100,
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $shift->id,
+                'teller_name' => $shift->teller->name ?? null,
+                'opening_cash' => $shift->opening_cash ? $shift->opening_cash / 100 : 0,
+                'opening_floats' => $openingFloatsFormatted,
+                'expected_closing_cash' => $shift->expected_closing_cash ? $shift->expected_closing_cash / 100 : null,
+                'expected_closing_floats' => $shift->expected_closing_floats ? array_map(function ($v) {
+                    return abs($v) / 100;
+                }, $shift->expected_closing_floats) : null,
+            ]
+        ]);
     }
 
     /**
@@ -217,32 +484,41 @@ class ShiftController extends Controller
 
         $shift = TellerShift::findOrFail($id);
 
-        if ($shift->teller_id != $request->user()->id) {
+        if (!$shift->canSubmit() || $shift->teller_id != $request->user()->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'You can only submit your own shifts.'
+                'message' => 'You cannot submit this shift.'
             ], 403);
-        }
-
-        if ($shift->status != 'open') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Shift is not open.'
-            ], 422);
         }
 
         $request->validate([
             'closing_cash' => 'required|numeric|min:0',
-            'closing_floats' => 'nullable|array',
+            'closing_floats' => 'required|array',
+            'closing_floats.*' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
         ]);
 
         // Convert amounts to cents (integers)
         $closingCash = (int)($request->closing_cash * 100);
         $closingFloats = [];
-        if ($request->closing_floats) {
-            foreach ($request->closing_floats as $provider => $amount) {
-                $closingFloats[$provider] = (int)($amount * 100);
+        foreach ($request->closing_floats as $provider => $amount) {
+            $closingFloats[$provider] = (int)($amount * 100);
+        }
+
+        // Validate amounts
+        if ($closingCash < 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Closing cash must be greater than or equal to 0.'
+            ], 422);
+        }
+
+        foreach ($closingFloats as $provider => $amount) {
+            if ($amount < 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Closing float for {$provider} must be greater than or equal to 0."
+                ], 422);
             }
         }
 
@@ -259,14 +535,32 @@ class ShiftController extends Controller
 
             DB::commit();
 
+            // Format variance floats
+            $varianceFloatsFormatted = null;
+            if ($shift->variance_floats) {
+                $varianceFloatsFormatted = [];
+                foreach ($shift->variance_floats as $provider => $amount) {
+                    $providerModel = FloatProvider::where('name', $provider)->first();
+                    $varianceFloatsFormatted[] = [
+                        'provider' => $provider,
+                        'display_name' => $providerModel ? $providerModel->display_name : ucfirst($provider),
+                        'amount' => $amount / 100,
+                    ];
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Shift submitted successfully.',
                 'data' => [
                     'id' => $shift->id,
                     'status' => $shift->status,
+                    'closing_cash' => $shift->closing_cash ? $shift->closing_cash / 100 : null,
+                    'closing_floats' => $shift->closing_floats ? array_map(function ($v) {
+                        return abs($v) / 100;
+                    }, $shift->closing_floats) : null,
                     'variance_cash' => $shift->variance_cash ? $shift->variance_cash / 100 : null,
-                    'variance_floats' => $shift->variance_floats ? array_map(function($v) { return $v / 100; }, $shift->variance_floats) : null,
+                    'variance_floats' => $varianceFloatsFormatted,
                 ]
             ]);
         } catch (\Exception $e) {
@@ -276,6 +570,51 @@ class ShiftController extends Controller
                 'message' => 'Failed to submit shift: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get shift data for verification form
+     */
+    public function verifyForm(Request $request, $id)
+    {
+        if ($request->user()->cannot('Verify Shifts')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access Denied'
+            ], 403);
+        }
+
+        $shift = TellerShift::with(['teller', 'treasurer'])->findOrFail($id);
+
+        if (!$shift->canVerify()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shift cannot be verified.'
+            ], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $shift->id,
+                'teller_name' => $shift->teller->name ?? null,
+                'treasurer_name' => $shift->treasurer->name ?? null,
+                'status' => $shift->status,
+                'closing_cash' => $shift->closing_cash ? $shift->closing_cash / 100 : null,
+                'closing_floats' => $shift->closing_floats ? array_map(function ($v) {
+                    return abs($v) / 100;
+                }, $shift->closing_floats) : null,
+                'expected_closing_cash' => $shift->expected_closing_cash ? $shift->expected_closing_cash / 100 : null,
+                'expected_closing_floats' => $shift->expected_closing_floats ? array_map(function ($v) {
+                    return abs($v) / 100;
+                }, $shift->expected_closing_floats) : null,
+                'variance_cash' => $shift->variance_cash ? $shift->variance_cash / 100 : null,
+                'variance_floats' => $shift->variance_floats ? array_map(function ($v) {
+                    return $v / 100;
+                }, $shift->variance_floats) : null,
+                'notes' => $shift->notes,
+            ]
+        ]);
     }
 
     /**
@@ -292,27 +631,40 @@ class ShiftController extends Controller
 
         $shift = TellerShift::findOrFail($id);
 
-        if ($shift->status != 'submitted') {
+        if (!$shift->canVerify()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Shift is not submitted for verification.'
-            ], 422);
+                'message' => 'Shift cannot be verified.'
+            ], 403);
         }
 
         $request->validate([
-            'approved' => 'required|boolean',
+            'action' => 'required|in:approve,request_adjustment',
+            'adjustments' => 'required_if:action,request_adjustment|array',
+            'adjustments.*.account_id' => 'required_if:action,request_adjustment|exists:accounts,id',
+            'adjustments.*.amount' => 'required_if:action,request_adjustment|numeric',
+            'adjustments.*.reason' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
 
         try {
             DB::beginTransaction();
 
-            $action = $request->approved ? 'approve' : 'request_adjustment';
-            $adjustments = $request->adjustments ?? [];
-            
+            // Process adjustments if present
+            $adjustments = [];
+            if ($request->action === 'request_adjustment' && $request->has('adjustments')) {
+                foreach ($request->adjustments as $adjustment) {
+                    $adjustments[] = [
+                        'account_id' => $adjustment['account_id'],
+                        'amount' => (int)($adjustment['amount'] * 100), // Convert to cents
+                        'reason' => $adjustment['reason'] ?? 'Reconciliation adjustment',
+                    ];
+                }
+            }
+
             $shift = $this->accountingService->verifyShift(
                 $shift,
-                $action,
+                $request->action,
                 $adjustments,
                 $request->notes
             );
@@ -321,13 +673,14 @@ class ShiftController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => $request->approved ? 'Shift verified successfully.' : 'Shift marked as discrepancy.',
+                'message' => $request->action === 'approve' ? 'Shift verified successfully.' : 'Shift marked as discrepancy.',
                 'data' => [
                     'id' => $shift->id,
                     'status' => $shift->status,
                 ]
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to verify shift: ' . $e->getMessage()
@@ -335,4 +688,3 @@ class ShiftController extends Controller
         }
     }
 }
-

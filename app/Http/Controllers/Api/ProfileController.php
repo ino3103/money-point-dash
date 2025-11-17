@@ -17,6 +17,14 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        // Convert gender from database format to user-friendly format
+        $genderMap = [
+            'M' => 'male',
+            'F' => 'female',
+            'O' => 'other',
+        ];
+        $genderDisplay = $user->gender ? ($genderMap[$user->gender] ?? $user->gender) : null;
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -25,7 +33,7 @@ class ProfileController extends Controller
                 'email' => $user->email,
                 'username' => $user->username,
                 'phone_no' => $user->phone_no,
-                'gender' => $user->gender,
+                'gender' => $genderDisplay,
                 'profile_picture' => $user->profile_picture,
                 'status' => $user->status,
                 'roles' => $user->getRoleNames(),
@@ -51,7 +59,7 @@ class ProfileController extends Controller
             'email' => 'required|email|unique:users,email,' . $request->user()->id,
             'username' => 'required|string|max:255|unique:users,username,' . $request->user()->id,
             'phone_no' => 'nullable|string|max:20',
-            'gender' => 'nullable|string|in:male,female,other',
+            'gender' => 'nullable|string|in:male,female,other,M,F,O',
         ]);
 
         $user = $request->user();
@@ -60,11 +68,27 @@ class ProfileController extends Controller
         $user->username = $request->input('username');
         $user->phone_no = $request->input('phone_no');
         
-        if ($request->has('gender')) {
-            $user->gender = $request->input('gender');
+        // Convert gender from user-friendly format to database format
+        if ($request->has('gender') && $request->input('gender') !== null) {
+            $gender = $request->input('gender');
+            // Map user-friendly values to database values
+            $genderMap = [
+                'male' => 'M',
+                'female' => 'F',
+                'other' => 'O',
+            ];
+            $user->gender = $genderMap[$gender] ?? $gender; // Use mapped value or original if already M/F/O
         }
         
         $user->save();
+
+        // Convert gender from database format to user-friendly format
+        $genderMap = [
+            'M' => 'male',
+            'F' => 'female',
+            'O' => 'other',
+        ];
+        $genderDisplay = $user->gender ? ($genderMap[$user->gender] ?? $user->gender) : null;
 
         return response()->json([
             'success' => true,
@@ -75,7 +99,7 @@ class ProfileController extends Controller
                 'email' => $user->email,
                 'username' => $user->username,
                 'phone_no' => $user->phone_no,
-                'gender' => $user->gender,
+                'gender' => $genderDisplay,
             ]
         ]);
     }

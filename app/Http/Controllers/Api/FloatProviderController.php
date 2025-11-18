@@ -31,6 +31,7 @@ class FloatProviderController extends Controller
                     'id' => $provider->id,
                     'name' => $provider->name,
                     'display_name' => $provider->display_name,
+                    'type' => $provider->type,
                     'description' => $provider->description,
                     'is_active' => $provider->is_active,
                     'sort_order' => $provider->sort_order,
@@ -54,6 +55,7 @@ class FloatProviderController extends Controller
         $request->validate([
             'name' => 'required|string|max:50|unique:float_providers,name',
             'display_name' => 'required|string|max:100',
+            'type' => 'required|in:bank,mobile_money',
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer|min:0',
         ]);
@@ -61,6 +63,7 @@ class FloatProviderController extends Controller
         $provider = FloatProvider::create([
             'name' => strtolower($request->name),
             'display_name' => $request->display_name,
+            'type' => $request->type,
             'description' => $request->description,
             'is_active' => true,
             'sort_order' => $request->sort_order ?? 0,
@@ -93,11 +96,13 @@ class FloatProviderController extends Controller
 
         $request->validate([
             'display_name' => 'required|string|max:100',
+            'type' => 'required|in:bank,mobile_money',
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
         $provider->display_name = $request->display_name;
+        $provider->type = $request->type;
         $provider->description = $request->description;
         if ($request->has('sort_order')) {
             $provider->sort_order = $request->sort_order;

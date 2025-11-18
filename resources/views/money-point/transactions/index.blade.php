@@ -35,6 +35,20 @@
                                 @include('alerts.success')
                                 @include('alerts.errors')
                                 @include('alerts.error')
+                                
+                                @if(session('print_transaction_id'))
+                                    <div class="alert alert-info border-0 mb-4">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="las la-check-circle me-2"></i>
+                                                Transaction processed successfully!
+                                            </span>
+                                            <a href="{{ route('money-point.transactions.print', session('print_transaction_id')) }}" target="_blank" class="btn btn-primary btn-sm">
+                                                <i class="las la-print me-1"></i>Print Receipt
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endif
 
                                 <div class="table-responsive table-responsive--dynamic">
                                     <div class="row mb-3">
@@ -266,27 +280,102 @@
                     allowClear: true
                 });
 
-                // Initialize Select2 when modals are opened
-                $('#withdrawModal').on('shown.bs.modal', function() {
+                // Reset forms when modals are hidden
+                $('#withdrawModal').on('hidden.bs.modal', function() {
+                    $('#withdrawModal form')[0].reset();
                     if ($('#withdraw_provider').hasClass('select2-hidden-accessible')) {
                         $('#withdraw_provider').select2('destroy');
                     }
-                    $('#withdraw_provider').select2({
-                        dropdownParent: $('#withdrawModal'),
-                        placeholder: 'Select Provider',
-                        allowClear: false
-                    });
+                    $('#withdraw_provider').val('').trigger('change');
                 });
 
-                $('#depositModal').on('shown.bs.modal', function() {
+                $('#depositModal').on('hidden.bs.modal', function() {
+                    $('#depositModal form')[0].reset();
                     if ($('#deposit_provider').hasClass('select2-hidden-accessible')) {
                         $('#deposit_provider').select2('destroy');
                     }
+                    $('#deposit_provider').val('').trigger('change');
+                });
+
+                // Initialize Select2 when modals are opened
+                $('#withdrawModal').on('shown.bs.modal', function() {
+                    // Destroy existing Select2 if present
+                    if ($('#withdraw_provider').hasClass('select2-hidden-accessible')) {
+                        $('#withdraw_provider').select2('destroy');
+                    }
+                    
+                    // Initialize Select2
+                    $('#withdraw_provider').select2({
+                        dropdownParent: $('#withdrawModal'),
+                        placeholder: 'Select Provider',
+                        allowClear: false,
+                        width: '100%'
+                    });
+                    
+                    // Handle Select2 selection event
+                    $('#withdraw_provider').on('select2:select', function(e) {
+                        // The value is automatically set by Select2
+                        // Just trigger the toggle function
+                        setTimeout(function() {
+                            if (typeof toggleWithdrawFields === 'function') {
+                                toggleWithdrawFields();
+                            }
+                        }, 10);
+                    });
+                    
+                    // Bind change event for manual changes
+                    $('#withdraw_provider').on('change', function() {
+                        if (typeof toggleWithdrawFields === 'function') {
+                            toggleWithdrawFields();
+                        }
+                    });
+                    
+                    // Initialize fields based on current selection
+                    setTimeout(function() {
+                        if (typeof toggleWithdrawFields === 'function') {
+                            toggleWithdrawFields();
+                        }
+                    }, 100);
+                });
+
+                $('#depositModal').on('shown.bs.modal', function() {
+                    // Destroy existing Select2 if present
+                    if ($('#deposit_provider').hasClass('select2-hidden-accessible')) {
+                        $('#deposit_provider').select2('destroy');
+                    }
+                    
+                    // Initialize Select2
                     $('#deposit_provider').select2({
                         dropdownParent: $('#depositModal'),
                         placeholder: 'Select Provider',
-                        allowClear: false
+                        allowClear: false,
+                        width: '100%'
                     });
+                    
+                    // Handle Select2 selection event
+                    $('#deposit_provider').on('select2:select', function(e) {
+                        // The value is automatically set by Select2
+                        // Just trigger the toggle function
+                        setTimeout(function() {
+                            if (typeof toggleDepositFields === 'function') {
+                                toggleDepositFields();
+                            }
+                        }, 10);
+                    });
+                    
+                    // Bind change event for manual changes
+                    $('#deposit_provider').on('change', function() {
+                        if (typeof toggleDepositFields === 'function') {
+                            toggleDepositFields();
+                        }
+                    });
+                    
+                    // Initialize fields based on current selection
+                    setTimeout(function() {
+                        if (typeof toggleDepositFields === 'function') {
+                            toggleDepositFields();
+                        }
+                    }, 100);
                 });
 
                 // Load transaction details when modal is opened
@@ -312,6 +401,27 @@
                         method: 'GET',
                         success: function(response) {
                             modal.find('#transactionDetailsContent').html(response.html);
+                            
+                            // Extract transaction type from data attribute
+                            var transactionCard = modal.find('[data-transaction-type]');
+                            var transactionType = transactionCard.length > 0 ? transactionCard.data('transaction-type') : null;
+                            
+                            if (transactionType && ['withdrawal', 'deposit'].includes(transactionType)) {
+                                // Show print button in footer
+                                var printBtn = modal.find('.modal-footer').find('.btn-print-receipt');
+                                if (printBtn.length === 0) {
+                                    modal.find('.modal-footer').prepend(
+                                        '<a href="{{ route("money-point.transactions.print", ":id") }}'.replace(':id', transactionId) + '" target="_blank" class="btn btn-primary btn-print-receipt">' +
+                                        '<i class="las la-print me-1"></i>Print Receipt</a>'
+                                    );
+                                } else {
+                                    printBtn.attr('href', "{{ route('money-point.transactions.print', ':id') }}".replace(':id', transactionId));
+                                    printBtn.show();
+                                }
+                            } else {
+                                // Hide print button if not withdrawal/deposit
+                                modal.find('.modal-footer').find('.btn-print-receipt').hide();
+                            }
                         },
                         error: function(xhr) {
                             modal.find('#transactionDetailsContent').html(`

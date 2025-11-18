@@ -41,6 +41,7 @@
                                                 <th class="">S/n</th>
                                                 <th class="">Name</th>
                                                 <th class="">Display Name</th>
+                                                <th class="">Type</th>
                                                 <th class="">Description</th>
                                                 <th class="">Sort Order</th>
                                                 <th class="">Status</th>
@@ -55,6 +56,15 @@
                                                     <td>{{ $index + 1 }}</td>
                                                     <td>{{ $provider->name }}</td>
                                                     <td>{{ $provider->display_name }}</td>
+                                                    <td>
+                                                        @php
+                                                            $typeLabel = $provider->type === 'bank' ? 'Bank' : 'Mobile Money';
+                                                            $typeClass = $provider->type === 'bank' ? 'primary' : 'info';
+                                                        @endphp
+                                                        <div class="userDatatable-content d-inline-block">
+                                                            <span class="bg-opacity-{{ $typeClass }} color-{{ $typeClass }} userDatatable-content-status active">{{ $typeLabel }}</span>
+                                                        </div>
+                                                    </td>
                                                     <td>{{ $provider->description ?? '-' }}</td>
                                                     <td>{{ $provider->sort_order }}</td>
                                                     <td>
@@ -69,7 +79,7 @@
                                                     @can('Create Accounts')
                                                         <td>
                                                             <div class="d-flex gap-2">
-                                                                <button class="btn btn-warning btn-xs btn-squared btn-transparent-warning" data-bs-toggle="modal" data-bs-target="#editModal" data-id="{{ $provider->id }}" data-name="{{ $provider->name }}" data-display_name="{{ $provider->display_name }}" data-description="{{ htmlspecialchars($provider->description ?? '') }}" data-is_active="{{ $provider->is_active ? 1 : 0 }}" data-sort_order="{{ $provider->sort_order }}">Edit</button>
+                                                                <button class="btn btn-warning btn-xs btn-squared btn-transparent-warning" data-bs-toggle="modal" data-bs-target="#editModal" data-id="{{ $provider->id }}" data-name="{{ $provider->name }}" data-display_name="{{ $provider->display_name }}" data-type="{{ $provider->type }}" data-description="{{ htmlspecialchars($provider->description ?? '') }}" data-is_active="{{ $provider->is_active ? 1 : 0 }}" data-sort_order="{{ $provider->sort_order }}">Edit</button>
                                                                 <button class="btn btn-{{ $provider->is_active ? 'secondary' : 'success' }} btn-xs btn-squared" onclick="toggleProvider({{ $provider->id }}, {{ $provider->is_active ? 0 : 1 }})">{{ $provider->is_active ? 'Disable' : 'Enable' }}</button>
                                                             </div>
                                                         </td>
@@ -110,6 +120,14 @@
                                 <label for="display_name" class="form-label">Display Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="display_name" name="display_name" required
                                     placeholder="e.g., M-Pesa, Tigo Pesa">
+                            </div>
+                            <div class="mb-3">
+                                <label for="type" class="form-label">Type <span class="text-danger">*</span></label>
+                                <select class="form-control" id="type" name="type" required>
+                                    <option value="mobile_money" selected>Mobile Money</option>
+                                    <option value="bank">Bank</option>
+                                </select>
+                                <small class="text-muted">Select whether this is a bank or mobile money provider</small>
                             </div>
                             <div class="mb-3">
                                 <label for="description" class="form-label">Description</label>
@@ -153,6 +171,14 @@
                                 <input type="text" class="form-control" id="edit_display_name" name="display_name" required>
                             </div>
                             <div class="mb-3">
+                                <label for="edit_type" class="form-label">Type <span class="text-danger">*</span></label>
+                                <select class="form-control" id="edit_type" name="type" required>
+                                    <option value="mobile_money">Mobile Money</option>
+                                    <option value="bank">Bank</option>
+                                </select>
+                                <small class="text-muted">Select whether this is a bank or mobile money provider</small>
+                            </div>
+                            <div class="mb-3">
                                 <label for="edit_description" class="form-label">Description</label>
                                 <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
                             </div>
@@ -189,7 +215,7 @@
                 pageLength: defaultPageLength,
                 autoWidth: false,
                 responsive: true,
-                order: [[4, 'asc'], [2, 'asc']] // Sort by sort_order, then display_name
+                order: [[5, 'asc'], [2, 'asc']] // Sort by sort_order (column 5), then display_name (column 2)
             });
 
             @can('Create Accounts')
@@ -198,6 +224,7 @@
                     var id = button.data('id');
                     var name = button.data('name');
                     var display_name = button.data('display_name');
+                    var type = button.data('type');
                     var description = button.data('description');
                     var is_active = button.data('is_active');
                     var sort_order = button.data('sort_order');
@@ -205,6 +232,7 @@
                     modal.find('#edit_id').val(id);
                     modal.find('#edit_name').val(name);
                     modal.find('#edit_display_name').val(display_name);
+                    modal.find('#edit_type').val(type || 'mobile_money');
                     modal.find('#edit_description').val(description);
                     modal.find('#edit_sort_order').val(sort_order);
                     modal.find('#edit_is_active').prop('checked', is_active == 1);

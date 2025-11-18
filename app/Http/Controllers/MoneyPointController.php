@@ -915,6 +915,25 @@ class MoneyPointController extends Controller
     }
 
     /**
+     * Print transaction receipt
+     */
+    public function printReceipt($id)
+    {
+        if (Auth()->user()->cannot('View Money Point Transactions')) {
+            abort(403, 'Access Denied');
+        }
+
+        $transaction = MoneyPointTransaction::with(['user', 'tellerShift.teller', 'lines.account'])
+            ->findOrFail($id);
+
+        // Calculate amount
+        $cashLine = $transaction->lines->firstWhere('account.account_type', 'cash');
+        $amount = $cashLine ? abs($cashLine->amount) : abs($transaction->lines->where('amount', '>', 0)->sum('amount'));
+
+        return view('money-point.transactions.print-receipt', compact('transaction', 'amount'));
+    }
+
+    /**
      * Show withdrawal form
      */
     public function createWithdrawal()
@@ -966,12 +985,29 @@ class MoneyPointController extends Controller
             'amount' => 'required',
             'provider' => 'required|string',
             'reference' => 'nullable|string',
-            'customer_phone' => 'nullable|string',
+            'customer_name' => 'nullable|string|max:255',
+            'customer_phone' => 'nullable|string|max:20',
+            'account_no' => 'nullable|string|max:255',
         ]);
 
         // Validate amount is positive
         if ($amount <= 0) {
             return back()->withInput()->with('error', 'Amount must be greater than 0.');
+        }
+
+        // Determine if provider is bank or mobile money
+        $providerModel = \App\Models\FloatProvider::where('name', $request->provider)->first();
+        $isBankProvider = $providerModel && $providerModel->type === 'bank';
+
+        // Validate based on provider type
+        if ($isBankProvider) {
+            if (!$request->account_no) {
+                return back()->withInput()->with('error', 'Account number is required for bank transactions.');
+            }
+        } else {
+            if (!$request->customer_phone) {
+                return back()->withInput()->with('error', 'Customer phone number is required for mobile money transactions.');
+            }
         }
 
         $shift = TellerShift::where('teller_id', Auth::id())
@@ -983,19 +1019,28 @@ class MoneyPointController extends Controller
         }
 
         try {
+            $metadata = [
+                'reference' => $request->reference,
+                'customer_name' => $request->customer_name,
+            ];
+
+            if ($isBankProvider) {
+                $metadata['account_no'] = $request->account_no;
+            } else {
+                $metadata['customer_phone'] = $request->customer_phone;
+            }
+
             $transaction = $this->accountingService->processWithdrawal(
                 Auth::user(),
                 $shift,
                 $request->provider,
                 $amount,
-                [
-                    'reference' => $request->reference,
-                    'customer_phone' => $request->customer_phone,
-                ]
+                $metadata
             );
 
             return redirect()->route('money-point.transactions')
-                ->with('success', 'Withdrawal processed successfully.');
+                ->with('success', 'Withdrawal processed successfully.')
+                ->with('print_transaction_id', $transaction->id);
         } catch (\Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
@@ -1053,12 +1098,29 @@ class MoneyPointController extends Controller
             'amount' => 'required',
             'provider' => 'required|string',
             'reference' => 'nullable|string',
-            'customer_phone' => 'nullable|string',
+            'customer_name' => 'nullable|string|max:255',
+            'customer_phone' => 'nullable|string|max:20',
+            'account_no' => 'nullable|string|max:255',
         ]);
 
         // Validate amount is positive
         if ($amount <= 0) {
             return back()->withInput()->with('error', 'Amount must be greater than 0.');
+        }
+
+        // Determine if provider is bank or mobile money
+        $providerModel = \App\Models\FloatProvider::where('name', $request->provider)->first();
+        $isBankProvider = $providerModel && $providerModel->type === 'bank';
+
+        // Validate based on provider type
+        if ($isBankProvider) {
+            if (!$request->account_no) {
+                return back()->withInput()->with('error', 'Account number is required for bank transactions.');
+            }
+        } else {
+            if (!$request->customer_phone) {
+                return back()->withInput()->with('error', 'Customer phone number is required for mobile money transactions.');
+            }
         }
 
         $shift = TellerShift::where('teller_id', Auth::id())
@@ -1070,19 +1132,28 @@ class MoneyPointController extends Controller
         }
 
         try {
+            $metadata = [
+                'reference' => $request->reference,
+                'customer_name' => $request->customer_name,
+            ];
+
+            if ($isBankProvider) {
+                $metadata['account_no'] = $request->account_no;
+            } else {
+                $metadata['customer_phone'] = $request->customer_phone;
+            }
+
             $transaction = $this->accountingService->processDeposit(
                 Auth::user(),
                 $shift,
                 $request->provider,
                 $amount,
-                [
-                    'reference' => $request->reference,
-                    'customer_phone' => $request->customer_phone,
-                ]
+                $metadata
             );
 
             return redirect()->route('money-point.transactions')
-                ->with('success', 'Deposit processed successfully.');
+                ->with('success', 'Deposit processed successfully.')
+                ->with('print_transaction_id', $transaction->id);
         } catch (\Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
@@ -1123,6 +1194,7 @@ class MoneyPointController extends Controller
         $request->validate([
             'name' => 'required|string|max:50|unique:float_providers,name',
             'display_name' => 'required|string|max:100',
+            'type' => 'required|in:bank,mobile_money',
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer|min:0',
         ]);
@@ -1130,6 +1202,7 @@ class MoneyPointController extends Controller
         FloatProvider::create([
             'name' => strtolower($request->name),
             'display_name' => $request->display_name,
+            'type' => $request->type,
             'description' => $request->description,
             'is_active' => true,
             'sort_order' => $request->sort_order ?? 0,
@@ -1151,6 +1224,7 @@ class MoneyPointController extends Controller
             'id' => 'required|exists:float_providers,id',
             'name' => 'required|string|max:50|unique:float_providers,name,' . $request->id,
             'display_name' => 'required|string|max:100',
+            'type' => 'required|in:bank,mobile_money',
             'description' => 'nullable|string',
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer|min:0',
@@ -1160,6 +1234,7 @@ class MoneyPointController extends Controller
         $provider->update([
             'name' => strtolower($request->name),
             'display_name' => $request->display_name,
+            'type' => $request->type,
             'description' => $request->description,
             'is_active' => $request->has('is_active') ? (bool)$request->is_active : $provider->is_active,
             'sort_order' => $request->sort_order ?? $provider->sort_order,

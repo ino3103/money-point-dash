@@ -21,6 +21,7 @@ class FloatProvidersTableSeeder extends Seeder
                 [
                     'name' => 'mpesa',
                     'display_name' => 'M-Pesa',
+                    'type' => 'mobile_money',
                     'description' => 'Vodacom M-Pesa mobile money service',
                     'is_active' => true,
                     'sort_order' => 1,
@@ -28,6 +29,7 @@ class FloatProvidersTableSeeder extends Seeder
                 [
                     'name' => 'tigopesa',
                     'display_name' => 'Tigo Pesa',
+                    'type' => 'mobile_money',
                     'description' => 'Tigo Pesa mobile money service',
                     'is_active' => true,
                     'sort_order' => 2,
@@ -35,6 +37,7 @@ class FloatProvidersTableSeeder extends Seeder
                 [
                     'name' => 'airtemoney',
                     'display_name' => 'Airtel Money',
+                    'type' => 'mobile_money',
                     'description' => 'Airtel Money mobile money service',
                     'is_active' => true,
                     'sort_order' => 3,
@@ -42,6 +45,7 @@ class FloatProvidersTableSeeder extends Seeder
                 [
                     'name' => 'crdb',
                     'display_name' => 'CRDB Bank',
+                    'type' => 'bank',
                     'description' => 'CRDB Bank wallet/mobile banking',
                     'is_active' => true,
                     'sort_order' => 4,
@@ -49,6 +53,7 @@ class FloatProvidersTableSeeder extends Seeder
                 [
                     'name' => 'nmb',
                     'display_name' => 'NMB Bank',
+                    'type' => 'bank',
                     'description' => 'NMB Bank wallet/mobile banking',
                     'is_active' => true,
                     'sort_order' => 5,

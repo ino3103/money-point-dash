@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     // Transactions
     Route::get('/money-point/transactions', [TransactionController::class, 'index']);
     Route::get('/money-point/transactions/{id}', [TransactionController::class, 'show']);
+    Route::get('/money-point/transactions/{id}/print-url', [TransactionController::class, 'printReceipt']);
     Route::post('/money-point/transactions/withdraw', [TransactionController::class, 'withdraw']);
     Route::post('/money-point/transactions/deposit', [TransactionController::class, 'deposit']);
 

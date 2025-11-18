@@ -12,6 +12,7 @@ class FloatProvider extends Model
     protected $fillable = [
         'name',
         'display_name',
+        'type',
         'description',
         'is_active',
         'sort_order',

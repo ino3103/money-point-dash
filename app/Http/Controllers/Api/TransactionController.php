@@ -154,7 +154,9 @@ class TransactionController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'provider' => 'required|string',
             'reference' => 'nullable|string',
-            'customer_phone' => 'nullable|string',
+            'customer_name' => 'nullable|string|max:255',
+            'customer_phone' => 'nullable|string|max:20',
+            'account_no' => 'nullable|string|max:255',
         ]);
 
         $amount = (int)$request->amount; // Amount is in currency units
@@ -164,6 +166,27 @@ class TransactionController extends Controller
                 'success' => false,
                 'message' => 'Amount must be greater than 0.'
             ], 422);
+        }
+
+        // Determine if provider is bank or mobile money
+        $providerModel = \App\Models\FloatProvider::where('name', $request->provider)->first();
+        $isBankProvider = $providerModel && $providerModel->type === 'bank';
+
+        // Validate based on provider type
+        if ($isBankProvider) {
+            if (!$request->account_no) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Account number is required for bank transactions.'
+                ], 422);
+            }
+        } else {
+            if (!$request->customer_phone) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Customer phone number is required for mobile money transactions.'
+                ], 422);
+            }
         }
 
         $shift = TellerShift::where('teller_id', $request->user()->id)
@@ -180,15 +203,23 @@ class TransactionController extends Controller
         try {
             DB::beginTransaction();
 
+            $metadata = [
+                'reference' => $request->reference,
+                'customer_name' => $request->customer_name,
+            ];
+
+            if ($isBankProvider) {
+                $metadata['account_no'] = $request->account_no;
+            } else {
+                $metadata['customer_phone'] = $request->customer_phone;
+            }
+
             $transaction = $this->accountingService->processWithdrawal(
                 $request->user(),
                 $shift,
                 $request->provider,
                 $amount,
-                [
-                    'reference' => $request->reference,
-                    'customer_phone' => $request->customer_phone,
-                ]
+                $metadata
             );
 
             DB::commit();
@@ -202,6 +233,7 @@ class TransactionController extends Controller
                     'type' => $transaction->type,
                     'amount' => $amount,
                     'created_at' => $transaction->created_at->toISOString(),
+                    'print_url' => url('/money-point/transactions/' . $transaction->id . '/print'),
                 ]
             ], 201);
         } catch (\Exception $e) {
@@ -229,7 +261,9 @@ class TransactionController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'provider' => 'required|string',
             'reference' => 'nullable|string',
-            'customer_phone' => 'nullable|string',
+            'customer_name' => 'nullable|string|max:255',
+            'customer_phone' => 'nullable|string|max:20',
+            'account_no' => 'nullable|string|max:255',
         ]);
 
         $amount = (int)$request->amount; // Amount is in currency units
@@ -239,6 +273,27 @@ class TransactionController extends Controller
                 'success' => false,
                 'message' => 'Amount must be greater than 0.'
             ], 422);
+        }
+
+        // Determine if provider is bank or mobile money
+        $providerModel = \App\Models\FloatProvider::where('name', $request->provider)->first();
+        $isBankProvider = $providerModel && $providerModel->type === 'bank';
+
+        // Validate based on provider type
+        if ($isBankProvider) {
+            if (!$request->account_no) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Account number is required for bank transactions.'
+                ], 422);
+            }
+        } else {
+            if (!$request->customer_phone) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Customer phone number is required for mobile money transactions.'
+                ], 422);
+            }
         }
 
         $shift = TellerShift::where('teller_id', $request->user()->id)
@@ -255,15 +310,23 @@ class TransactionController extends Controller
         try {
             DB::beginTransaction();
 
+            $metadata = [
+                'reference' => $request->reference,
+                'customer_name' => $request->customer_name,
+            ];
+
+            if ($isBankProvider) {
+                $metadata['account_no'] = $request->account_no;
+            } else {
+                $metadata['customer_phone'] = $request->customer_phone;
+            }
+
             $transaction = $this->accountingService->processDeposit(
                 $request->user(),
                 $shift,
                 $request->provider,
                 $amount,
-                [
-                    'reference' => $request->reference,
-                    'customer_phone' => $request->customer_phone,
-                ]
+                $metadata
             );
 
             DB::commit();
@@ -277,6 +340,7 @@ class TransactionController extends Controller
                     'type' => $transaction->type,
                     'amount' => $amount,
                     'created_at' => $transaction->created_at->toISOString(),
+                    'print_url' => url('/money-point/transactions/' . $transaction->id . '/print'),
                 ]
             ], 201);
         } catch (\Exception $e) {
@@ -286,5 +350,35 @@ class TransactionController extends Controller
                 'message' => 'Failed to process deposit: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get print receipt URL
+     */
+    public function printReceipt(Request $request, $id)
+    {
+        if ($request->user()->cannot('View Money Point Transactions')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access Denied'
+            ], 403);
+        }
+
+        $transaction = MoneyPointTransaction::findOrFail($id);
+
+        // Only allow printing for withdrawal and deposit transactions
+        if (!in_array($transaction->type, ['withdrawal', 'deposit'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Print receipt is only available for withdrawal and deposit transactions.'
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'print_url' => url('/money-point/transactions/' . $transaction->id . '/print'),
+            ]
+        ]);
     }
 }

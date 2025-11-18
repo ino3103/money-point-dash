@@ -290,6 +290,7 @@ class ShiftController extends Controller
             return [
                 'name' => $provider->name,
                 'display_name' => $provider->display_name,
+                'type' => $provider->type,
                 'is_active' => $provider->is_active,
             ];
         });
@@ -471,9 +472,11 @@ class ShiftController extends Controller
         $openingFloatsFormatted = [];
         if ($shift->opening_floats) {
             foreach ($shift->opening_floats as $provider => $amount) {
+                $providerModel = FloatProvider::where('name', $provider)->first();
                 $openingFloatsFormatted[] = [
                     'provider' => $provider,
                     'display_name' => $providerNames[$provider] ?? ucfirst($provider),
+                    'type' => $providerModel ? $providerModel->type : null,
                     'amount' => abs($amount),
                 ];
             }
@@ -708,6 +711,148 @@ class ShiftController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to verify shift: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Accept shift by teller
+     */
+    public function acceptShift(Request $request, $id)
+    {
+        if ($request->user()->cannot('Submit Shifts')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access Denied'
+            ], 403);
+        }
+
+        $shift = TellerShift::findOrFail($id);
+
+        if (!$shift->canAccept()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot accept this shift.'
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $shift = $this->accountingService->acceptShift($shift);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Shift accepted successfully.',
+                'data' => [
+                    'id' => $shift->id,
+                    'status' => $shift->status,
+                    'accepted_at' => $shift->accepted_at->toISOString(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to accept shift: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject shift by teller
+     */
+    public function rejectShift(Request $request, $id)
+    {
+        if ($request->user()->cannot('Submit Shifts')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access Denied'
+            ], 403);
+        }
+
+        $shift = TellerShift::findOrFail($id);
+
+        if (!$shift->canReject()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot reject this shift.'
+            ], 422);
+        }
+
+        $request->validate([
+            'rejection_reason' => 'required|string|min:10|max:1000',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $shift = $this->accountingService->rejectShift($shift, $request->rejection_reason);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Shift rejected. The treasurer will review your concerns.',
+                'data' => [
+                    'id' => $shift->id,
+                    'status' => $shift->status,
+                    'rejection_reason' => $shift->rejection_reason,
+                    'rejected_at' => $shift->rejected_at->toISOString(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reject shift: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Confirm funds by teller
+     */
+    public function confirmFunds(Request $request, $id)
+    {
+        if ($request->user()->cannot('Submit Shifts')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access Denied'
+            ], 403);
+        }
+
+        $shift = TellerShift::findOrFail($id);
+
+        if (!$shift->canConfirm()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot confirm this shift.'
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $shift = $this->accountingService->confirmFunds($shift);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Funds confirmed. You can now start working.',
+                'data' => [
+                    'id' => $shift->id,
+                    'status' => $shift->status,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to confirm funds: ' . $e->getMessage()
             ], 500);
         }
     }

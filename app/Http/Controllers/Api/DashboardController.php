@@ -86,6 +86,7 @@ class DashboardController extends Controller
                     'id' => $account->id,
                     'provider' => $account->provider,
                     'display_name' => $providerInfo ? $providerInfo->display_name : ucfirst($account->provider),
+                    'type' => $providerInfo ? $providerInfo->type : null,
                     'user_id' => $account->user_id,
                     'user_name' => $account->user->name ?? 'System',
                     'balance' => abs($account->balance),
@@ -98,6 +99,7 @@ class DashboardController extends Controller
                 return [
                     'provider' => $provider,
                     'display_name' => $accounts->first()['display_name'],
+                    'type' => $accounts->first()['type'],
                     'total' => abs($total),
                     'system_total' => $total,
                     'accounts' => $accounts->values(),

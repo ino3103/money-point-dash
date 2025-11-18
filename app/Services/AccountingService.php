@@ -32,7 +32,7 @@ class AccountingService
                 'teller_id' => $teller->id,
                 'treasurer_id' => $treasurer->id,
                 'opened_at' => now(),
-                'status' => 'open',
+                'status' => 'pending_teller_confirmation', // Teller must confirm funds before working
                 'opening_cash' => $openingCash,
                 'opening_floats' => $openingFloats,
             ]);
@@ -486,9 +486,10 @@ class AccountingService
             }
 
             if ($action === 'approve') {
+                // Set status to pending_teller_acceptance instead of verified
+                // Teller must accept before shift is fully verified
                 $shift->update([
-                    'status' => 'verified',
-                    'closed_at' => now(),
+                    'status' => 'pending_teller_acceptance',
                     'notes' => $notes,
                 ]);
             } elseif ($action === 'request_adjustment') {
@@ -501,6 +502,96 @@ class AccountingService
                     'notes' => $notes,
                 ]);
             }
+
+            return $shift->fresh();
+        });
+    }
+
+    /**
+     * Accept shift by teller
+     */
+    public function acceptShift(TellerShift $shift): TellerShift
+    {
+        return DB::transaction(function () use ($shift) {
+            if (!$shift->canAccept()) {
+                throw new \Exception('Shift cannot be accepted');
+            }
+
+            $shift->update([
+                'status' => 'verified',
+                'closed_at' => now(),
+                'accepted_at' => now(),
+            ]);
+
+            return $shift->fresh();
+        });
+    }
+
+    /**
+     * Reject shift by teller with reason
+     */
+    public function rejectShift(TellerShift $shift, string $rejectionReason): TellerShift
+    {
+        return DB::transaction(function () use ($shift, $rejectionReason) {
+            if (!$shift->canReject()) {
+                throw new \Exception('Shift cannot be rejected');
+            }
+
+            if (empty(trim($rejectionReason))) {
+                throw new \Exception('Rejection reason is required');
+            }
+
+            $shift->update([
+                'status' => 'rejected',
+                'rejection_reason' => $rejectionReason,
+                'rejected_at' => now(),
+            ]);
+
+            return $shift->fresh();
+        });
+    }
+
+    /**
+     * Confirm funds by teller - teller confirms received funds match system
+     */
+    public function confirmFunds(TellerShift $shift): TellerShift
+    {
+        return DB::transaction(function () use ($shift) {
+            if ($shift->status !== 'pending_teller_confirmation') {
+                throw new \Exception('Shift cannot be confirmed');
+            }
+
+            if ($shift->teller_id !== auth()->id()) {
+                throw new \Exception('Only the assigned teller can confirm funds');
+            }
+
+            $shift->update([
+                'status' => 'open',
+            ]);
+
+            return $shift->fresh();
+        });
+    }
+
+    /**
+     * Reopen rejected shift by treasurer
+     * This allows treasurer to fix issues and put shift back to pending_teller_acceptance
+     */
+    public function reopenRejectedShift(TellerShift $shift, string $notes = null): TellerShift
+    {
+        return DB::transaction(function () use ($shift, $notes) {
+            if ($shift->status !== 'rejected') {
+                throw new \Exception('Only rejected shifts can be reopened');
+            }
+
+            // Clear rejection data and set back to pending_teller_acceptance
+            // This allows teller to review again after treasurer makes corrections
+            $shift->update([
+                'status' => 'pending_teller_acceptance',
+                'rejection_reason' => null,
+                'rejected_at' => null,
+                'notes' => $notes ?? $shift->notes,
+            ]);
 
             return $shift->fresh();
         });

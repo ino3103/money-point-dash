@@ -52,6 +52,9 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::post('/money-point/shifts', [ShiftController::class, 'store']);
     Route::post('/money-point/shifts/{id}/submit', [ShiftController::class, 'submit']);
     Route::post('/money-point/shifts/{id}/verify', [ShiftController::class, 'verify']);
+    Route::post('/money-point/shifts/{id}/confirm-funds', [ShiftController::class, 'confirmFunds']);
+    Route::post('/money-point/shifts/{id}/accept', [ShiftController::class, 'acceptShift']);
+    Route::post('/money-point/shifts/{id}/reject', [ShiftController::class, 'rejectShift']);
 
     // Accounts
     Route::get('/money-point/accounts', [AccountController::class, 'index']);

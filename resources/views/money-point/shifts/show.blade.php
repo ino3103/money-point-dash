@@ -13,13 +13,16 @@
                         $dateFormat = getSetting('date_format', 'Y-m-d');
                         $timeFormat = getSetting('time_format', 'H:i:s');
                         $dateTimeFormat = "$dateFormat $timeFormat";
-                        $statusText = ucwords($shift->status);
+                        $statusText = ucwords(str_replace('_', ' ', $shift->status));
                         $bgClass = match ($shift->status) {
                             'open' => 'primary',
                             'submitted' => 'warning',
                             'verified' => 'success',
                             'closed' => 'secondary',
                             'discrepancy' => 'danger',
+                            'pending_teller_acceptance' => 'info',
+                            'pending_teller_confirmation' => 'warning',
+                            'rejected' => 'danger',
                             default => 'secondary',
                         };
                     @endphp
@@ -32,6 +35,15 @@
                                 </div>
                                 <div class="action-btn">
                                     <div class="drawer-btn d-flex justify-content-center gap-2">
+                                        @if ($shift->canConfirm() && Auth()->user()->can('Submit Shifts'))
+                                            <form action="{{ route('money-point.shifts.confirm-funds', $shift->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-success btn-sm btn-default btn-squared"
+                                                    onclick="return confirm('Confirm that the funds you received match the amounts shown in the system?')">
+                                                    <i class="las la-check-circle me-1"></i>Confirm Funds
+                                                </button>
+                                            </form>
+                                        @endif
                                         @if ($shift->canSubmit() && Auth::id() == $shift->teller_id && Auth()->user()->can('Submit Shifts'))
                                             <button type="button" class="btn btn-warning btn-sm btn-default btn-squared"
                                                 data-bs-toggle="modal" data-bs-target="#submitShiftModal">
@@ -42,6 +54,19 @@
                                             <button type="button" class="btn btn-success btn-sm btn-default btn-squared"
                                                 data-bs-toggle="modal" data-bs-target="#verifyShiftModal">
                                                 <i class="las la-check-double me-1"></i>Verify Shift
+                                            </button>
+                                        @endif
+                                        @if ($shift->isPendingAcceptance() && Auth::id() == $shift->teller_id && Auth()->user()->can('Submit Shifts'))
+                                            <form action="{{ route('money-point.shifts.accept', $shift->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-success btn-sm btn-default btn-squared"
+                                                    onclick="return confirm('Are you sure you want to accept this shift?')">
+                                                    <i class="las la-check-circle me-1"></i>Accept Shift
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-danger btn-sm btn-default btn-squared"
+                                                data-bs-toggle="modal" data-bs-target="#rejectShiftModal">
+                                                <i class="las la-times-circle me-1"></i>Reject Shift
                                             </button>
                                         @endif
                                         <a href="{{ route('money-point.shifts') }}"
@@ -90,6 +115,92 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                @if ($shift->isRejected() && $shift->rejection_reason)
+                                    <!-- Rejection Information -->
+                                    <div class="card border-0 mb-25 border-danger">
+                                        <div class="card-header border-bottom bg-danger bg-opacity-10">
+                                            <h5 class="mb-0 fw-bold text-danger">
+                                                <i class="las la-exclamation-triangle me-2"></i>Shift Rejected
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="alert alert-danger mb-0">
+                                                <h6 class="alert-heading fw-bold mb-2">Rejection Reason:</h6>
+                                                <p class="mb-2">{{ $shift->rejection_reason }}</p>
+                                                @if ($shift->rejected_at)
+                                                    <hr>
+                                                    <small class="text-muted">
+                                                        <i class="las la-clock me-1"></i>
+                                                        Rejected on: {{ \Carbon\Carbon::parse($shift->rejected_at)->format($dateTimeFormat) }}
+                                                    </small>
+                                                @endif
+                                            </div>
+                                            @if (Auth()->user()->can('Verify Shifts'))
+                                                <div class="mt-3">
+                                                    <p class="text-muted mb-2">
+                                                        <strong>Action Required:</strong> Please review the teller's concerns and make necessary corrections. 
+                                                        After fixing the issues, you can reopen this shift for the teller to review again.
+                                                    </p>
+                                                    <form action="{{ route('money-point.shifts.reopen', $shift->id) }}" method="POST" class="mt-2">
+                                                        @csrf
+                                                        <div class="mb-2">
+                                                            <label for="reopen_notes" class="form-label small">Notes (optional):</label>
+                                                            <textarea class="form-control form-control-sm" id="reopen_notes" name="notes" rows="2" placeholder="Describe what corrections were made..."></textarea>
+                                                        </div>
+                                                        <button type="submit" class="btn btn-primary btn-sm btn-default btn-squared"
+                                                            onclick="return confirm('Are you sure you want to reopen this shift? The teller will be able to review and accept/reject again.')">
+                                                            <i class="las la-redo me-1"></i>Reopen Shift
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if ($shift->isPendingConfirmation() && Auth::id() == $shift->teller_id)
+                                    <!-- Pending Confirmation Alert - Only show to teller -->
+                                    <div class="alert alert-warning mb-25">
+                                        <h6 class="alert-heading fw-bold mb-2">
+                                            <i class="las la-exclamation-triangle me-2"></i>Funds Confirmation Required
+                                        </h6>
+                                        <p class="mb-3">
+                                            <strong>Action Required:</strong> Please verify that the funds you received from the treasurer match the amounts shown below. 
+                                            You cannot perform transactions until you confirm the funds.
+                                        </p>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <strong>Expected Opening Cash:</strong> {{ formatCurrency($shift->opening_cash ?? 0, 0) }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Expected Opening Floats:</strong>
+                                                @if ($shift->opening_floats)
+                                                    @foreach ($shift->opening_floats as $provider => $amount)
+                                                        <div class="ms-2">
+                                                            {{ $providerNames[$provider] ?? ucfirst($provider) }}: {{ formatCurrency(abs($amount), 0) }}
+                                                        </div>
+                                                    @endforeach
+                                                @else
+                                                    <span class="text-muted">None</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if ($shift->isPendingAcceptance())
+                                    <!-- Pending Acceptance Alert -->
+                                    <div class="alert alert-info mb-25">
+                                        <h6 class="alert-heading fw-bold mb-2">
+                                            <i class="las la-info-circle me-2"></i>Shift Pending Your Acceptance
+                                        </h6>
+                                        <p class="mb-0">
+                                            The treasurer has verified the shift amounts. Please review and either accept or reject this shift.
+                                            If you notice any discrepancies, please reject and provide a reason for the treasurer to review.
+                                        </p>
+                                    </div>
+                                @endif
 
                                 <!-- Opening Balances -->
                                 <div class="card border-0 mb-25">
@@ -403,6 +514,10 @@ if ($expectedFloat < 0) {
 
     @if ($shift->canVerify() && Auth()->user()->can('Verify Shifts'))
         @include('money-point.shifts.verify-modal')
+    @endif
+
+    @if ($shift->isPendingAcceptance() && Auth::id() == $shift->teller_id && Auth()->user()->can('Submit Shifts'))
+        @include('money-point.shifts.reject-modal')
     @endif
 
     @can('View Money Point Transactions')

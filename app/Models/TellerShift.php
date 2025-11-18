@@ -24,6 +24,9 @@ class TellerShift extends Model
         'variance_cash',
         'variance_floats',
         'notes',
+        'rejection_reason',
+        'rejected_at',
+        'accepted_at',
     ];
 
     protected $casts = [
@@ -37,6 +40,8 @@ class TellerShift extends Model
         'variance_floats' => 'array',
         'opened_at' => 'datetime',
         'closed_at' => 'datetime',
+        'rejected_at' => 'datetime',
+        'accepted_at' => 'datetime',
     ];
 
     public function teller()
@@ -81,5 +86,69 @@ class TellerShift extends Model
     public function canVerify()
     {
         return $this->status === 'submitted';
+    }
+
+    /**
+     * Check if shift is pending teller acceptance
+     */
+    public function isPendingAcceptance()
+    {
+        return $this->status === 'pending_teller_acceptance';
+    }
+
+    /**
+     * Check if shift can be accepted by teller
+     */
+    public function canAccept()
+    {
+        return $this->status === 'pending_teller_acceptance' && $this->teller_id === auth()->id();
+    }
+
+    /**
+     * Check if shift can be rejected by teller
+     */
+    public function canReject()
+    {
+        return $this->status === 'pending_teller_acceptance' && $this->teller_id === auth()->id();
+    }
+
+    /**
+     * Check if shift is rejected
+     */
+    public function isRejected()
+    {
+        return $this->status === 'rejected';
+    }
+
+    /**
+     * Check if shift is pending teller confirmation
+     */
+    public function isPendingConfirmation()
+    {
+        return $this->status === 'pending_teller_confirmation';
+    }
+
+    /**
+     * Check if shift can be confirmed by teller
+     */
+    public function canConfirm()
+    {
+        return $this->status === 'pending_teller_confirmation' && $this->teller_id === auth()->id();
+    }
+
+    /**
+     * Check if shift can be reopened by treasurer
+     */
+    public function canReopen()
+    {
+        return $this->status === 'rejected';
+    }
+
+    /**
+     * Check if shift allows transactions
+     */
+    public function allowsTransactions()
+    {
+        return $this->status === 'open' && !$this->isRejected();
     }
 }

@@ -76,6 +76,10 @@ class FloatProviderController extends Controller
                 'id' => $provider->id,
                 'name' => $provider->name,
                 'display_name' => $provider->display_name,
+                'type' => $provider->type,
+                'description' => $provider->description,
+                'is_active' => $provider->is_active,
+                'sort_order' => $provider->sort_order,
             ]
         ], 201);
     }
@@ -116,6 +120,10 @@ class FloatProviderController extends Controller
                 'id' => $provider->id,
                 'name' => $provider->name,
                 'display_name' => $provider->display_name,
+                'type' => $provider->type,
+                'description' => $provider->description,
+                'is_active' => $provider->is_active,
+                'sort_order' => $provider->sort_order,
             ]
         ]);
     }

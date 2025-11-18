@@ -763,6 +763,114 @@ class MoneyPointController extends Controller
     }
 
     /**
+     * Accept shift by teller
+     */
+    public function acceptShift(Request $request, $id)
+    {
+        if (Auth()->user()->cannot('Submit Shifts')) {
+            abort(403, 'Access Denied');
+        }
+
+        $shift = TellerShift::findOrFail($id);
+
+        if (!$shift->canAccept()) {
+            return back()->with('error', 'You cannot accept this shift.');
+        }
+
+        try {
+            $shift = $this->accountingService->acceptShift($shift);
+
+            return redirect()->route('money-point.shifts.show', $shift->id)
+                ->with('success', 'Shift accepted successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Confirm funds by teller
+     */
+    public function confirmFunds(Request $request, $id)
+    {
+        if (Auth()->user()->cannot('Submit Shifts')) {
+            abort(403, 'Access Denied');
+        }
+
+        $shift = TellerShift::findOrFail($id);
+
+        if (!$shift->canConfirm()) {
+            return back()->with('error', 'You cannot confirm this shift.');
+        }
+
+        try {
+            $shift = $this->accountingService->confirmFunds($shift);
+
+            return redirect()->route('money-point.shifts.show', $shift->id)
+                ->with('success', 'Funds confirmed. You can now start working.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Reopen rejected shift by treasurer
+     */
+    public function reopenShift(Request $request, $id)
+    {
+        if (Auth()->user()->cannot('Verify Shifts')) {
+            abort(403, 'Access Denied');
+        }
+
+        $shift = TellerShift::findOrFail($id);
+
+        if (!$shift->canReopen()) {
+            return back()->with('error', 'This shift cannot be reopened.');
+        }
+
+        $request->validate([
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $shift = $this->accountingService->reopenRejectedShift($shift, $request->notes);
+
+            return redirect()->route('money-point.shifts.show', $shift->id)
+                ->with('success', 'Shift reopened. The teller can now review and accept/reject again.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Reject shift by teller
+     */
+    public function rejectShift(Request $request, $id)
+    {
+        if (Auth()->user()->cannot('Submit Shifts')) {
+            abort(403, 'Access Denied');
+        }
+
+        $shift = TellerShift::findOrFail($id);
+
+        if (!$shift->canReject()) {
+            return back()->with('error', 'You cannot reject this shift.');
+        }
+
+        $request->validate([
+            'rejection_reason' => 'required|string|min:10|max:1000',
+        ]);
+
+        try {
+            $shift = $this->accountingService->rejectShift($shift, $request->rejection_reason);
+
+            return redirect()->route('money-point.shifts.show', $shift->id)
+                ->with('success', 'Shift rejected. The treasurer will review your concerns.');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
      * List accounts
      */
     public function accounts()
@@ -1018,7 +1126,20 @@ class MoneyPointController extends Controller
             ->first();
 
         if (!$shift) {
+            // Check if shift exists but is pending confirmation
+            $pendingShift = TellerShift::where('teller_id', Auth::id())
+                ->where('status', 'pending_teller_confirmation')
+                ->first();
+
+            if ($pendingShift) {
+                return back()->withInput()->with('error', 'You must confirm the funds before performing transactions. Please go to your shift and click "Confirm Funds".');
+            }
+
             return back()->with('error', 'You must have an open shift to perform transactions.');
+        }
+
+        if ($shift->isRejected()) {
+            return back()->withInput()->with('error', 'This shift has been rejected. You cannot perform transactions until the treasurer reviews and corrects the issues.');
         }
 
         try {
@@ -1131,7 +1252,20 @@ class MoneyPointController extends Controller
             ->first();
 
         if (!$shift) {
+            // Check if shift exists but is pending confirmation
+            $pendingShift = TellerShift::where('teller_id', Auth::id())
+                ->where('status', 'pending_teller_confirmation')
+                ->first();
+
+            if ($pendingShift) {
+                return back()->withInput()->with('error', 'You must confirm the funds before performing transactions. Please go to your shift and click "Confirm Funds".');
+            }
+
             return back()->with('error', 'You must have an open shift to perform transactions.');
+        }
+
+        if ($shift->isRejected()) {
+            return back()->withInput()->with('error', 'This shift has been rejected. You cannot perform transactions until the treasurer reviews and corrects the issues.');
         }
 
         try {

@@ -69,6 +69,12 @@ class TransactionController extends Controller
                     $amount = abs($tx->lines->where('amount', '>', 0)->sum('amount'));
                 }
 
+                // Generate print URL for withdrawal and deposit transactions
+                $printUrl = null;
+                if (in_array($tx->type, ['withdrawal', 'deposit'])) {
+                    $printUrl = url('/money-point/transactions/' . $tx->id . '/print');
+                }
+
                 return [
                     'id' => $tx->id,
                     'uuid' => $tx->uuid,
@@ -80,6 +86,7 @@ class TransactionController extends Controller
                     'teller_name' => $tx->tellerShift->teller->name ?? null,
                     'amount' => $amount,
                     'created_at' => $tx->created_at->toISOString(),
+                    'print_url' => $printUrl,
                 ];
             }),
             'meta' => [
@@ -109,6 +116,12 @@ class TransactionController extends Controller
         $cashLine = $transaction->lines->firstWhere('account.account_type', 'cash');
         $amount = $cashLine ? abs($cashLine->amount) : abs($transaction->lines->where('amount', '>', 0)->sum('amount'));
 
+        // Generate print URL for withdrawal and deposit transactions
+        $printUrl = null;
+        if (in_array($transaction->type, ['withdrawal', 'deposit'])) {
+            $printUrl = url('/money-point/transactions/' . $transaction->id . '/print');
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -123,6 +136,7 @@ class TransactionController extends Controller
                 'teller_name' => $transaction->tellerShift->teller->name ?? null,
                 'amount' => $amount,
                 'created_at' => $transaction->created_at->toISOString(),
+                'print_url' => $printUrl,
                 'metadata' => $transaction->metadata,
                 'lines' => $transaction->lines->map(function ($line) {
                     return [
@@ -194,9 +208,28 @@ class TransactionController extends Controller
             ->first();
 
         if (!$shift) {
+            // Check if shift exists but is pending confirmation
+            $pendingShift = TellerShift::where('teller_id', $request->user()->id)
+                ->where('status', 'pending_teller_confirmation')
+                ->first();
+
+            if ($pendingShift) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You must confirm the funds before performing transactions. Please confirm your shift funds first.'
+                ], 422);
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'You must have an open shift to perform transactions.'
+            ], 422);
+        }
+
+        if ($shift->isRejected()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This shift has been rejected. You cannot perform transactions until the treasurer reviews and corrects the issues.'
             ], 422);
         }
 
@@ -301,9 +334,28 @@ class TransactionController extends Controller
             ->first();
 
         if (!$shift) {
+            // Check if shift exists but is pending confirmation
+            $pendingShift = TellerShift::where('teller_id', $request->user()->id)
+                ->where('status', 'pending_teller_confirmation')
+                ->first();
+
+            if ($pendingShift) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You must confirm the funds before performing transactions. Please confirm your shift funds first.'
+                ], 422);
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'You must have an open shift to perform transactions.'
+            ], 422);
+        }
+
+        if ($shift->isRejected()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This shift has been rejected. You cannot perform transactions until the treasurer reviews and corrects the issues.'
             ], 422);
         }
 

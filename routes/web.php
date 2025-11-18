@@ -32,6 +32,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/money-point/shifts/{id}/submit', [MoneyPointController::class, 'submitShift'])->name('money-point.shifts.submit.store');
     Route::get('/money-point/shifts/{id}/verify', [MoneyPointController::class, 'verifyShiftForm'])->name('money-point.shifts.verify');
     Route::post('/money-point/shifts/{id}/verify', [MoneyPointController::class, 'verifyShift'])->name('money-point.shifts.verify.store');
+    Route::post('/money-point/shifts/{id}/confirm-funds', [MoneyPointController::class, 'confirmFunds'])->name('money-point.shifts.confirm-funds');
+    Route::post('/money-point/shifts/{id}/accept', [MoneyPointController::class, 'acceptShift'])->name('money-point.shifts.accept');
+    Route::post('/money-point/shifts/{id}/reject', [MoneyPointController::class, 'rejectShift'])->name('money-point.shifts.reject');
+    Route::post('/money-point/shifts/{id}/reopen', [MoneyPointController::class, 'reopenShift'])->name('money-point.shifts.reopen');
 
     // Accounts
     Route::get('/money-point/accounts', [MoneyPointController::class, 'accounts'])->name('money-point.accounts');

@@ -59,7 +59,16 @@ class TransactionController extends Controller
         return response()->json([
             'success' => true,
             'data' => $transactions->through(function ($tx) {
-                $cashLine = $tx->lines->firstWhere('account.account_type', 'cash');
+                $amount = 0;
+                if (in_array($tx->type, ['withdrawal', 'deposit'])) {
+                    $cashLine = $tx->lines->firstWhere('account.account_type', 'cash');
+                    if ($cashLine) {
+                        $amount = abs($cashLine->amount);
+                    }
+                } else {
+                    $amount = abs($tx->lines->where('amount', '>', 0)->sum('amount'));
+                }
+
                 return [
                     'id' => $tx->id,
                     'uuid' => $tx->uuid,
@@ -69,7 +78,7 @@ class TransactionController extends Controller
                     'user_name' => $tx->user->name ?? null,
                     'shift_id' => $tx->teller_shift_id,
                     'teller_name' => $tx->tellerShift->teller->name ?? null,
-                    'amount' => $cashLine ? abs($cashLine->amount) : 0,
+                    'amount' => $amount,
                     'created_at' => $tx->created_at->toISOString(),
                 ];
             }),

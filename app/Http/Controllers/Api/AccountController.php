@@ -43,7 +43,7 @@ class AccountController extends Controller
                     'user_name' => $account->user->name ?? null,
                     'account_type' => $account->account_type,
                     'provider' => $account->provider,
-                    'balance' => $account->account_type === 'float' ? abs($account->balance) / 100 : $account->balance / 100,
+                    'balance' => $account->account_type === 'float' ? abs($account->balance) : $account->balance,
                     'currency' => $account->currency,
                     'is_active' => $account->is_active,
                 ];
@@ -86,9 +86,9 @@ class AccountController extends Controller
                 'id' => $line->id,
                 'date' => $line->created_at->toISOString(),
                 'description' => $line->transaction->reference ?? $line->transaction->type,
-                'debit' => $line->amount > 0 ? abs($line->amount) / 100 : 0,
-                'credit' => $line->amount < 0 ? abs($line->amount) / 100 : 0,
-                'balance' => $balance / 100,
+                'debit' => $line->amount > 0 ? abs($line->amount) : 0,
+                'credit' => $line->amount < 0 ? abs($line->amount) : 0,
+                'balance' => $balance,
                 'transaction_type' => $line->transaction->type,
                 'user_name' => $line->transaction->user->name ?? null,
             ];
@@ -101,7 +101,7 @@ class AccountController extends Controller
                     'id' => $account->id,
                     'account_type' => $account->account_type,
                     'provider' => $account->provider,
-                    'current_balance' => $account->account_type === 'float' ? abs($account->balance) / 100 : $account->balance / 100,
+                    'current_balance' => $account->account_type === 'float' ? abs($account->balance) : $account->balance,
                 ],
                 'ledger' => $ledger,
             ]

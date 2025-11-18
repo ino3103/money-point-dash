@@ -82,6 +82,9 @@ class ProfileController extends Controller
         
         $user->save();
 
+        // Refresh user to ensure we have the latest data
+        $user->refresh();
+
         // Convert gender from database format to user-friendly format
         $genderMap = [
             'M' => 'male',
@@ -100,6 +103,10 @@ class ProfileController extends Controller
                 'username' => $user->username,
                 'phone_no' => $user->phone_no,
                 'gender' => $genderDisplay,
+                'profile_picture' => $user->profile_picture,
+                'status' => $user->status,
+                'roles' => $user->getRoleNames(),
+                'permissions' => $user->getAllPermissions()->pluck('name'),
             ]
         ]);
     }

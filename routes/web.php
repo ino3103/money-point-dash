@@ -40,7 +40,9 @@ Route::middleware('auth')->group(function () {
     // Transactions
     Route::get('/money-point/transactions', [MoneyPointController::class, 'transactions'])->name('money-point.transactions');
     Route::get('/money-point/transactions/{id}', [MoneyPointController::class, 'showTransaction'])->name('money-point.transactions.show');
-    Route::get('/money-point/transactions/{id}/print', [MoneyPointController::class, 'printReceipt'])->name('money-point.transactions.print');
+});
+
+Route::middleware('auth')->group(function () {
     Route::get('/money-point/transactions/withdraw/create', [MoneyPointController::class, 'createWithdrawal'])->name('money-point.transactions.withdraw.create');
     Route::post('/money-point/transactions/withdraw', [MoneyPointController::class, 'storeWithdrawal'])->name('money-point.transactions.withdraw.store');
     Route::get('/money-point/transactions/deposit/create', [MoneyPointController::class, 'createDeposit'])->name('money-point.transactions.deposit.create');
@@ -88,5 +90,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/sms-settings/update', [SettingController::class, 'updateSmsSettings'])->name('sms-settings.update');
     Route::post('/send-sms', [SettingController::class, 'sendSms'])->name('sms.send');
 });
+
+// Print receipt route - accessible via both web session and API token (for Flutter apps)
+Route::middleware(['auth:sanctum'])->get('/money-point/transactions/{id}/print', [MoneyPointController::class, 'printReceipt'])->name('money-point.transactions.print');
 
 require __DIR__ . '/auth.php';

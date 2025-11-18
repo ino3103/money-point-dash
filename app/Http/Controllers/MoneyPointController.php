@@ -917,9 +917,12 @@ class MoneyPointController extends Controller
     /**
      * Print transaction receipt
      */
-    public function printReceipt($id)
+    public function printReceipt(Request $request, $id)
     {
-        if (Auth()->user()->cannot('View Money Point Transactions')) {
+        // Support both session auth (web) and token auth (API/Flutter)
+        $user = $request->user() ?? Auth()->user();
+
+        if (!$user || $user->cannot('View Money Point Transactions')) {
             abort(403, 'Access Denied');
         }
 

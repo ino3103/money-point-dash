@@ -67,7 +67,7 @@ class ProfileController extends Controller
         $user->email = $request->input('email');
         $user->username = $request->input('username');
         $user->phone_no = $request->input('phone_no');
-        
+
         // Convert gender from user-friendly format to database format
         if ($request->has('gender') && $request->input('gender') !== null) {
             $gender = $request->input('gender');
@@ -79,7 +79,7 @@ class ProfileController extends Controller
             ];
             $user->gender = $genderMap[$gender] ?? $gender; // Use mapped value or original if already M/F/O
         }
-        
+
         $user->save();
 
         // Refresh user to ensure we have the latest data
@@ -152,7 +152,7 @@ class ProfileController extends Controller
     public function loginHistory(Request $request)
     {
         $user = $request->user();
-        
+
         $loginHistories = LoginHistory::where('user_id', $user->id)
             ->orderBy('login_at', 'desc')
             ->limit(50)
@@ -171,4 +171,3 @@ class ProfileController extends Controller
         ]);
     }
 }
-

@@ -69,7 +69,7 @@ class TransactionController extends Controller
                     'user_name' => $tx->user->name ?? null,
                     'shift_id' => $tx->teller_shift_id,
                     'teller_name' => $tx->tellerShift->teller->name ?? null,
-                    'amount' => $cashLine ? abs($cashLine->amount) / 100 : 0,
+                    'amount' => $cashLine ? abs($cashLine->amount) : 0,
                     'created_at' => $tx->created_at->toISOString(),
                 ];
             }),
@@ -112,7 +112,7 @@ class TransactionController extends Controller
                 'shift_id' => $transaction->teller_shift_id,
                 'shift_status' => $transaction->tellerShift->status ?? null,
                 'teller_name' => $transaction->tellerShift->teller->name ?? null,
-                'amount' => $amount / 100,
+                'amount' => $amount,
                 'created_at' => $transaction->created_at->toISOString(),
                 'metadata' => $transaction->metadata,
                 'lines' => $transaction->lines->map(function ($line) {
@@ -121,7 +121,7 @@ class TransactionController extends Controller
                         'account_id' => $line->account_id,
                         'account_type' => $line->account->account_type,
                         'provider' => $line->account->provider,
-                        'amount' => $line->amount / 100,
+                        'amount' => $line->amount,
                         'description' => $line->description,
                     ];
                 }),
@@ -148,7 +148,7 @@ class TransactionController extends Controller
             'customer_phone' => 'nullable|string',
         ]);
 
-        $amount = (int)($request->amount * 100); // Convert to cents
+        $amount = (int)$request->amount; // Amount is in currency units
 
         if ($amount <= 0) {
             return response()->json([
@@ -191,7 +191,7 @@ class TransactionController extends Controller
                     'id' => $transaction->id,
                     'uuid' => $transaction->uuid,
                     'type' => $transaction->type,
-                    'amount' => $amount / 100,
+                    'amount' => $amount,
                     'created_at' => $transaction->created_at->toISOString(),
                 ]
             ], 201);
@@ -223,7 +223,7 @@ class TransactionController extends Controller
             'customer_phone' => 'nullable|string',
         ]);
 
-        $amount = (int)($request->amount * 100); // Convert to cents
+        $amount = (int)$request->amount; // Amount is in currency units
 
         if ($amount <= 0) {
             return response()->json([
@@ -266,7 +266,7 @@ class TransactionController extends Controller
                     'id' => $transaction->id,
                     'uuid' => $transaction->uuid,
                     'type' => $transaction->type,
-                    'amount' => $amount / 100,
+                    'amount' => $amount,
                     'created_at' => $transaction->created_at->toISOString(),
                 ]
             ], 201);
@@ -279,4 +279,3 @@ class TransactionController extends Controller
         }
     }
 }
-

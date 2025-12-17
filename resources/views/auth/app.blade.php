@@ -46,7 +46,7 @@ $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(valu
 
                     <div class="flex max-w-xs flex-col items-center">
                         <a href="/" class="mb-4 block">
-                            <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="w-24" />
+                            <img src="{{ asset('assets/images/logo-w.png') }}" alt="Logo" class="w-32" />
                         </a>
                         <p class="text-center text-gray-400 dark:text-white/60">
                             Control Cash. Control Float. Control Business. Control Everything.

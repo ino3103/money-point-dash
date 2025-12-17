@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
 
 <head>
@@ -54,7 +54,32 @@ $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(valu
                     </div>
                 </div>
             </div>
-            <!-- Toggler -->
+            <!-- Language Switcher -->
+            <div class="fixed right-6 top-6 z-50">
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open"
+                        class="bg-brand-500 hover:bg-brand-600 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129">
+                            </path>
+                        </svg>
+                        <span>{{ strtoupper(app()->getLocale()) }}</span>
+                    </button>
+                    <div x-show="open" @click.away="open = false" x-transition
+                        class="absolute right-0 mt-2 w-32 rounded-lg bg-white shadow-lg dark:bg-gray-800">
+                        <a href="{{ route('lang.switch', 'en') }}"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 {{ app()->getLocale() === 'en' ? 'bg-brand-50 text-brand-600 dark:bg-brand-900' : '' }}">
+                            English
+                        </a>
+                        <a href="{{ route('lang.switch', 'sw') }}"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 {{ app()->getLocale() === 'sw' ? 'bg-brand-50 text-brand-600 dark:bg-brand-900' : '' }}">
+                            Kiswahili
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- Dark Mode Toggler -->
             <div class="fixed right-6 bottom-6 z-50">
                 <button
                     class="bg-brand-500 hover:bg-brand-600 inline-flex size-14 items-center justify-center rounded-full text-white transition-colors"

@@ -32,6 +32,7 @@ return [
     // Common UI
     'menu' => 'MENU',
     'dashboard' => 'Dashboard',
+    'roles' => 'Roles',
     'edit_profile' => 'Edit profile',
     'sign_out' => 'Sign out',
 ];

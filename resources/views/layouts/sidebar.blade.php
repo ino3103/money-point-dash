@@ -2,9 +2,8 @@
     class="sidebar fixed top-0 left-0 z-9999 flex h-screen w-[290px] flex-col overflow-y-auto border-r border-gray-200 bg-white px-5 transition-all duration-300 xl:static xl:translate-x-0 dark:border-gray-800 dark:bg-black"
     @click.outside="sidebarToggle = false">
     <!-- SIDEBAR HEADER -->
-    <div :class="sidebarToggle ? 'justify-center' : 'justify-between'"
-        class="sidebar-header flex items-center gap-2 pt-4 pb-2">
-        <a href="{{ route('dashboard') }}">
+    <div class="sidebar-header flex items-center justify-center gap-2 pt-4 pb-2">
+        <a href="{{ route('dashboard') }}" class="flex justify-center w-full">
             <span class="logo" :class="sidebarToggle ? 'hidden' : ''">
                 <img class="w-24 dark:hidden" src="{{ asset('assets/images/logo-w.png') }}" alt="Logo" />
                 <img class="w-24 hidden dark:block" src="{{ asset('assets/images/logo-w.png') }}" alt="Logo" />
@@ -18,7 +17,7 @@
 
     <div class="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
         <!-- Sidebar Menu -->
-        <nav x-data="{ selected: $persist('Dashboard') }">
+        <nav>
             <!-- Menu Group -->
             <div>
                 <h3 class="mb-4 text-xs leading-[20px] text-gray-400 uppercase">
@@ -38,14 +37,9 @@
                 <ul class="mb-6 flex flex-col gap-1">
                     <!-- Menu Item Dashboard -->
                     <li>
-                        <a href="#" @click.prevent="selected = (selected === 'Dashboard' ? '':'Dashboard')"
-                            class="menu-item group"
-                            :class="(selected === 'Dashboard') || (page === 'ecommerce' || page === 'analytics' ||
-                                page === 'marketing' || page === 'crm' || page === 'stocks' ||
-                                page === 'saas' || page === 'logistics') ? 'menu-item-active' : 'menu-item-inactive'">
-                            <svg :class="(selected === 'Dashboard') || (page === 'ecommerce' || page === 'analytics' ||
-                                page === 'marketing' || page === 'crm' || page === 'stocks') ?
-                            'menu-item-icon-active' : 'menu-item-icon-inactive'"
+                        <a href="{{ route('dashboard') }}" class="menu-item group"
+                            :class="page === 'dashboard' ? 'menu-item-active' : 'menu-item-inactive'">
+                            <svg :class="page === 'dashboard' ? 'menu-item-icon-active' : 'menu-item-icon-inactive'"
                                 width="24" height="24" viewBox="0 0 24 24" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path fill-rule="evenodd" clip-rule="evenodd"
@@ -56,91 +50,47 @@
                             <span class="menu-item-text" :class="sidebarToggle ? 'xl:hidden' : ''">
                                 {{ __('auth.dashboard') }}
                             </span>
-
-                            <svg class="menu-item-arrow"
-                                :class="[(selected === 'Dashboard') ? 'menu-item-arrow-active' : 'menu-item-arrow-inactive',
-                                    sidebarToggle ? 'xl:hidden' : ''
-                                ]"
-                                width="20" height="20" viewBox="0 0 20 20" fill="none"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path d="M4.79175 7.39584L10.0001 12.6042L15.2084 7.39585" stroke="currentColor"
-                                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
                         </a>
-
-                        <!-- Dropdown Menu Start -->
-                        <div class="translate transform overflow-hidden"
-                            :class="(selected === 'Dashboard') ? 'block' : 'hidden'">
-                            <ul :class="sidebarToggle ? 'xl:hidden' : 'flex'"
-                                class="menu-dropdown mt-2 flex flex-col gap-1 pl-9">
-                                <li>
-                                    <a href="index.html" class="menu-dropdown-item group"
-                                        :class="page === 'ecommerce' ? 'menu-dropdown-item-active' :
-                                            'menu-dropdown-item-inactive'">
-                                        eCommerce
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="analytics.html" class="menu-dropdown-item group"
-                                        :class="page === 'analytics' ? 'menu-dropdown-item-active' :
-                                            'menu-dropdown-item-inactive'">
-                                        Analytics
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="menu-dropdown-item group" href="marketing.html"
-                                        :class="page === 'marketing' ? 'menu-dropdown-item-active' :
-                                            'menu-dropdown-item-inactive'">
-                                        Marketing
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="crm.html" class="menu-dropdown-item group"
-                                        :class="page === 'crm' ? 'menu-dropdown-item-active' :
-                                            'menu-dropdown-item-inactive'">
-                                        CRM
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="stocks.html" class="menu-dropdown-item group"
-                                        :class="page === 'stocks' ? 'menu-dropdown-item-active' :
-                                            'menu-dropdown-item-inactive'">
-                                        Stocks
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="saas.html" class="menu-dropdown-item group"
-                                        :class="page === 'saas' ? 'menu-dropdown-item-active' :
-                                            'menu-dropdown-item-inactive'">
-                                        SaaS
-                                        <span class="absolute right-3 flex items-center gap-1">
-                                            <span class="menu-dropdown-badge"
-                                                :class="page === 'saas' ? 'menu-dropdown-badge-active' :
-                                                    'menu-dropdown-badge-inactive'">
-                                                New
-                                            </span>
-                                        </span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="logistics.html" class="menu-dropdown-item group"
-                                        :class="page === 'logistics' ? 'menu-dropdown-item-active' :
-                                            'menu-dropdown-item-inactive'">
-                                        Logistics
-                                        <span class="absolute right-3 flex items-center gap-1">
-                                            <span class="menu-dropdown-badge"
-                                                :class="page === 'logistics' ? 'menu-dropdown-badge-active' :
-                                                    'menu-dropdown-badge-inactive'">
-                                                New
-                                            </span>
-                                        </span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                        <!-- Dropdown Menu End -->
                     </li>
                     <!-- Menu Item Dashboard -->
+
+                    <!-- Menu Item Roles -->
+                    <li>
+                        <a href="{{ route('roles.index') }}" class="menu-item group"
+                            :class="page === 'roles' ? 'menu-item-active' : 'menu-item-inactive'">
+                            <svg :class="page === 'roles' ? 'menu-item-icon-active' : 'menu-item-icon-inactive'"
+                                width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" clip-rule="evenodd"
+                                    d="M12 2C13.1046 2 14 2.89543 14 4C14 5.10457 13.1046 6 12 6C10.8954 6 10 5.10457 10 4C10 2.89543 10.8954 2 12 2ZM16 8C17.1046 8 18 8.89543 18 10C18 11.1046 17.1046 12 16 12C14.8954 12 14 11.1046 14 10C14 8.89543 14.8954 8 16 8ZM8 8C9.10457 8 10 8.89543 10 10C10 11.1046 9.10457 12 8 12C6.89543 12 6 11.1046 6 10C6 8.89543 6.89543 8 8 8ZM12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14ZM16 14C17.1046 14 18 14.8954 18 16C18 17.1046 17.1046 18 16 18C14.8954 18 14 17.1046 14 16C14 14.8954 14.8954 14 16 14ZM8 14C9.10457 14 10 14.8954 10 16C10 17.1046 9.10457 18 8 18C6.89543 18 6 17.1046 6 16C6 14.8954 6.89543 14 8 14ZM4 20C4 18.8954 4.89543 18 6 18C7.10457 18 8 18.8954 8 20C8 21.1046 7.10457 22 6 22C4.89543 22 4 21.1046 4 20ZM10 20C10 18.8954 10.8954 18 12 18C13.1046 18 14 18.8954 14 20C14 21.1046 13.1046 22 12 22C10.8954 22 10 21.1046 10 20ZM16 20C16 18.8954 16.8954 18 18 18C19.1046 18 20 18.8954 20 20C20 21.1046 19.1046 22 18 22C16.8954 22 16 21.1046 16 20Z"
+                                    fill="currentColor" />
+                            </svg>
+
+                            <span class="menu-item-text" :class="sidebarToggle ? 'xl:hidden' : ''">
+                                {{ __('auth.roles') }}
+                            </span>
+                        </a>
+                    </li>
+                    <!-- Menu Item Roles -->
+
+                    <!-- Menu Item Branches -->
+                    <li>
+                        <a href="{{ route('branches.index') }}" class="menu-item group"
+                            :class="page === 'branches' ? 'menu-item-active' : 'menu-item-inactive'">
+                            <svg :class="page === 'branches' ? 'menu-item-icon-active' : 'menu-item-icon-inactive'"
+                                width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M19 21H5C4.44772 21 4 20.5523 4 20V11L1 11L11.3273 1.6115C11.7087 1.26475 12.2913 1.26475 12.6727 1.6115L23 11L20 11V20C20 20.5523 19.5523 21 19 21ZM6 19H18V9.15745L12 3.7029L6 9.15745V19ZM8 15V17H16V15H8Z"
+                                    fill="currentColor" />
+                            </svg>
+
+                            <span class="menu-item-text" :class="sidebarToggle ? 'xl:hidden' : ''">
+                                Branches
+                            </span>
+                        </a>
+                    </li>
+                    <!-- Menu Item Branches -->
                 </ul>
             </div>
         </nav>

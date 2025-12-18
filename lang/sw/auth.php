@@ -32,6 +32,7 @@ return [
     // Common UI
     'menu' => 'MENU',
     'dashboard' => 'Dashibodi',
+    'roles' => 'Majukumu',
     'edit_profile' => 'Hariri wasifu',
     'sign_out' => 'Toka',
 ];

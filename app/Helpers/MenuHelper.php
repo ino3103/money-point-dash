@@ -22,6 +22,7 @@ if (!function_exists('getCurrentPageForMenu')) {
             'dashboard' => 'dashboard',
             'roles.*' => 'roles',
             'branches.*' => 'branches',
+            'float-types.*' => 'float-types',
             'users.*' => 'users',
             // Add more route patterns here as needed
         ];

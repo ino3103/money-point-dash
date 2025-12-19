@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\FloatTypeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -56,6 +57,15 @@ Route::middleware('auth')->group(function () {
     Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::patch('/users/{user}/password', [UserController::class, 'updatePassword'])->name('users.update-password');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+    // Float Types
+    Route::get('/float-types', [FloatTypeController::class, 'index'])->name('float-types.index');
+    Route::get('/float-types/data', [FloatTypeController::class, 'getData'])->name('float-types.data');
+    Route::get('/float-types/create', [FloatTypeController::class, 'create'])->name('float-types.create');
+    Route::post('/float-types', [FloatTypeController::class, 'store'])->name('float-types.store');
+    Route::get('/float-types/{floatType}/edit', [FloatTypeController::class, 'edit'])->name('float-types.edit');
+    Route::patch('/float-types/{floatType}', [FloatTypeController::class, 'update'])->name('float-types.update');
+    Route::delete('/float-types/{floatType}', [FloatTypeController::class, 'destroy'])->name('float-types.destroy');
 });
 
 require __DIR__ . '/auth.php';

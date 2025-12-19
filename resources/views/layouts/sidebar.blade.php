@@ -92,6 +92,28 @@
                     </li>
                     <!-- Menu Item Branches -->
 
+                    <!-- Menu Item Float Types -->
+                    <li>
+                        <a href="{{ route('float-types.index') }}" class="menu-item group"
+                            :class="page === 'float-types' ? 'menu-item-active' : 'menu-item-inactive'">
+                            <svg :class="page === 'float-types' ? 'menu-item-icon-active' : 'menu-item-icon-inactive'"
+                                width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+
+                            <span class="menu-item-text" :class="sidebarToggle ? 'xl:hidden' : ''">
+                                {{ __('auth.float_types') }}
+                            </span>
+                        </a>
+                    </li>
+                    <!-- Menu Item Float Types -->
+
                     <!-- Menu Item Users -->
                     <li>
                         <a href="{{ route('users.index') }}" class="menu-item group"

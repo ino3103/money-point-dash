@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', config('app.name') . ' - Create Branch')
+@section('title', config('app.name') . ' - ' . __('auth.create_branch'))
 
 @section('content')
     <div class="mx-auto max-w-7xl p-4 pb-20 md:p-6 md:pb-6">
@@ -33,7 +33,7 @@
                                 <path d="M10.0002 12.6666L5.3335 7.99998L10.0002 3.33331" stroke="currentColor"
                                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
-                            Back
+                            {{ __('auth.back') }}
                         </a>
                     </div>
                 </div>
@@ -105,7 +105,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                                         </svg>
-                                        Branch Name
+                                        {{ __('auth.branch_name') }}
                                         <span class="text-error-500">*</span>
                                     </label>
                                     <div class="relative">
@@ -166,7 +166,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                         </svg>
-                                        Email
+                                        {{ __('auth.email_address') }}
                                     </label>
                                     <div class="relative">
                                         <input type="email" id="email" name="email" value="{{ old('email') }}"
@@ -225,7 +225,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                    Address
+                                    {{ __('auth.address') }}
                                 </label>
                                 <div class="relative">
                                     <textarea id="address" name="address" rows="3"
@@ -254,7 +254,7 @@
                                     Active Branch
                                 </label>
                                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                                    Uncheck to make this branch inactive
+                                    {{ __('auth.make_branch_inactive') }}
                                 </p>
                             </div>
 
@@ -275,7 +275,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 4v16m8-8H4" />
                                     </svg>
-                                    Create Branch
+                                    {{ __('auth.create_branch') }}
                                 </button>
                             </div>
                         </form>

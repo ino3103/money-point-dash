@@ -156,7 +156,7 @@ class BranchController extends Controller
         ]);
 
         return redirect()->route('branches.index')
-            ->with('success', 'Branch created successfully.');
+            ->with('success', __('auth.branch_created'));
     }
 
     /**
@@ -224,7 +224,7 @@ class BranchController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Branch deleted successfully.'
+            'message' => __('auth.branch_deleted')
         ]);
     }
 }

@@ -49,6 +49,17 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // Check if the authenticated user is active
+        $user = Auth::user();
+        if ($user && !$user->is_active) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => trans('auth.account_inactive'),
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 
@@ -80,6 +91,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('email')) . '|' . $this->ip());
     }
 }

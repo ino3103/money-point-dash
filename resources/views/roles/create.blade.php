@@ -20,10 +20,11 @@
                                 </svg>
                             </div>
                             <div>
-                                <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90 sm:text-2xl">Create Role
+                                <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90 sm:text-2xl">
+                                    {{ __('auth.create_role') }}
                                 </h2>
-                                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Create a new role and assign
-                                    permissions</p>
+                                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                                    {{ __('auth.assign_permissions') }}</p>
                             </div>
                         </div>
                         <a href="{{ route('roles.index') }}"

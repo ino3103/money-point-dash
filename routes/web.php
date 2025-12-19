@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -45,6 +46,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/branches/{branch}/edit', [BranchController::class, 'edit'])->name('branches.edit');
     Route::patch('/branches/{branch}', [BranchController::class, 'update'])->name('branches.update');
     Route::delete('/branches/{branch}', [BranchController::class, 'destroy'])->name('branches.destroy');
+
+    // Users
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::get('/users/data', [UserController::class, 'getData'])->name('users.data');
+    Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+    Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::patch('/users/{user}/password', [UserController::class, 'updatePassword'])->name('users.update-password');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
 
 require __DIR__ . '/auth.php';

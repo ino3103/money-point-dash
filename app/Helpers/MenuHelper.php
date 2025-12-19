@@ -22,10 +22,8 @@ if (!function_exists('getCurrentPageForMenu')) {
             'dashboard' => 'dashboard',
             'roles.*' => 'roles',
             'branches.*' => 'branches',
+            'users.*' => 'users',
             // Add more route patterns here as needed
-            // Example:
-            // 'users.*' => 'users',
-            // 'products.*' => 'products',
         ];
 
         // Check route patterns in order

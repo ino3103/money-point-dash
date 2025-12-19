@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', config('app.name') . ' - Edit Branch')
+@section('title', config('app.name') . ' - ' . __('auth.edit_branch'))
 
 @section('content')
     <div class="mx-auto max-w-7xl p-4 pb-20 md:p-6 md:pb-6">
@@ -20,9 +20,10 @@
                                 </svg>
                             </div>
                             <div>
-                                <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90 sm:text-2xl">Edit
-                                    Branch</h2>
-                                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Update branch information</p>
+                                <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90 sm:text-2xl">
+                                    {{ __('auth.edit_branch') }}</h2>
+                                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                                    {{ __('auth.update_branch_info') }}</p>
                             </div>
                         </div>
                         <a href="{{ route('branches.index') }}"
@@ -32,7 +33,7 @@
                                 <path d="M10.0002 12.6666L5.3335 7.99998L10.0002 3.33331" stroke="currentColor"
                                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
-                            Back
+                            {{ __('auth.back') }}
                         </a>
                     </div>
                 </div>
@@ -42,8 +43,9 @@
                     <!-- Card Header -->
                     <div
                         class="border-b border-gray-100 bg-gray-50/50 px-5 py-4 dark:border-gray-800 dark:bg-gray-900/50 sm:px-6">
-                        <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Branch Details</h3>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Basic information about the branch</p>
+                        <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">{{ __('auth.branch_details') }}
+                        </h3>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('auth.basic_branch_info') }}</p>
                     </div>
 
                     <!-- Card Body -->
@@ -112,7 +114,7 @@
                                         <input type="text" id="name" name="name"
                                             value="{{ old('name', $branch->name) }}" required
                                             class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 shadow-sm transition-colors placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-200 dark:placeholder:text-gray-500 dark:focus:border-brand-500 @error('name') border-error-500 focus:border-error-500 focus:ring-error-500/20 @enderror"
-                                            placeholder="Enter branch name">
+                                            placeholder="{{ __('auth.enter_branch_name') }}">
                                     </div>
                                     @error('name')
                                         <p class="mt-1 flex items-center gap-1.5 text-sm text-error-600 dark:text-error-400">
@@ -141,7 +143,7 @@
                                         <input type="text" id="code" name="code"
                                             value="{{ old('code', $branch->code) }}"
                                             class="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 shadow-sm transition-colors placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-200 dark:placeholder:text-gray-500 dark:focus:border-brand-500 @error('code') border-error-500 focus:border-error-500 focus:ring-error-500/20 @enderror"
-                                            placeholder="Enter branch code">
+                                            placeholder="{{ __('auth.enter_branch_code') }}">
                                     </div>
                                     @error('code')
                                         <p class="mt-1 flex items-center gap-1.5 text-sm text-error-600 dark:text-error-400">
@@ -196,7 +198,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                         </svg>
-                                        Phone
+                                        {{ __('auth.phone_number') }}
                                     </label>
                                     <div class="relative">
                                         <input type="text" id="phone" name="phone"
@@ -228,7 +230,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                    Address
+                                    {{ __('auth.address') }}
                                 </label>
                                 <div class="relative">
                                     <textarea id="address" name="address" rows="3"
@@ -254,10 +256,10 @@
                                     class="h-4 w-4 rounded border-gray-300 text-brand-500 transition-colors focus:ring-2 focus:ring-brand-500/20 focus:ring-offset-0 dark:border-gray-600 dark:bg-gray-800 dark:ring-offset-gray-900">
                                 <label for="is_active"
                                     class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
-                                    Active Branch
+                                    {{ __('auth.active_branch') }}
                                 </label>
                                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                                    Uncheck to make this branch inactive
+                                    {{ __('auth.make_branch_inactive') }}
                                 </p>
                             </div>
 
@@ -270,7 +272,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M6 18L18 6M6 6l12 12" />
                                     </svg>
-                                    Cancel
+                                    {{ __('auth.cancel') }}
                                 </a>
                                 <button type="submit"
                                     class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:ring-offset-2 dark:ring-offset-gray-900">
@@ -278,7 +280,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M5 13l4 4L19 7" />
                                     </svg>
-                                    Update Branch
+                                    {{ __('auth.update_branch') }}
                                 </button>
                             </div>
                         </form>

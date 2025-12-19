@@ -1,38 +1,41 @@
 @extends('layouts.app')
 
-@section('title', config('app.name') . ' - ' . __('auth.roles'))
+@section('title', config('app.name') . ' - ' . __('auth.users'))
 
 @section('content')
-    <div class="mx-auto max-w-7xl p-4 pb-20 md:p-6 md:pb-6" x-data="rolesDataTable()" x-init="loadData()">
+    <div class="mx-auto max-w-7xl p-4 pb-20 md:p-6 md:pb-6" x-data="usersDataTable()" x-init="loadData()">
         <div class="grid grid-cols-12 gap-4 md:gap-6">
             <!-- Stats Cards -->
-            <div class="col-span-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <!-- Total Roles Card -->
+            <div class="col-span-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
+                <!-- Total Users Card -->
                 <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('auth.total_roles') }}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('auth.total_users') }}</p>
                             <p class="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90" x-text="totalEntries">0
                             </p>
                         </div>
                         <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-brand-500/10">
                             <svg class="fill-brand-500" width="24" height="24" viewBox="0 0 24 24" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
-                                <path fill-rule="evenodd" clip-rule="evenodd"
-                                    d="M12 2C13.1046 2 14 2.89543 14 4C14 5.10457 13.1046 6 12 6C10.8954 6 10 5.10457 10 4C10 2.89543 10.8954 2 12 2ZM16 8C17.1046 8 18 8.89543 18 10C18 11.1046 17.1046 12 16 12C14.8954 12 14 11.1046 14 10C14 8.89543 14.8954 8 16 8ZM8 8C9.10457 8 10 8.89543 10 10C10 11.1046 9.10457 12 8 12C6.89543 12 6 11.1046 6 10C6 8.89543 6.89543 8 8 8ZM12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14ZM16 14C17.1046 14 18 14.8954 18 16C18 17.1046 17.1046 18 16 18C14.8954 18 14 17.1046 14 16C14 14.8954 14.8954 14 16 14ZM8 14C9.10457 14 10 14.8954 10 16C10 17.1046 9.10457 18 8 18C6.89543 18 6 17.1046 6 16C6 14.8954 6.89543 14 8 14ZM4 20C4 18.8954 4.89543 18 6 18C7.10457 18 8 18.8954 8 20C8 21.1046 7.10457 22 6 22C4.89543 22 4 21.1046 4 20ZM10 20C10 18.8954 10.8954 18 12 18C13.1046 18 14 18.8954 14 20C14 21.1046 13.1046 22 12 22C10.8954 22 10 21.1046 10 20ZM16 20C16 18.8954 16.8954 18 18 18C19.1046 18 20 18.8954 20 20C20 21.1046 19.1046 22 18 22C16.8954 22 16 21.1046 16 20Z"
-                                    fill="currentColor" />
+                                <path
+                                    d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z"
+                                    stroke="currentColor" stroke-width="2" />
+                                <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z"
+                                    stroke="currentColor" stroke-width="2" />
                             </svg>
                         </div>
                     </div>
                 </div>
 
-                <!-- Active Roles Card -->
+                <!-- Users with Branch Card -->
                 <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('auth.active_roles') }}</p>
-                            <p class="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90" x-text="data.length">0
-                            </p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('auth.users_with_branch') }}</p>
+                            <p class="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90"
+                                x-text="data.filter(u => u.branch_name && u.branch_name !== '{{ __('auth.no_branch') }}').length">
+                                0</p>
                         </div>
                         <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-success-500/10">
                             <svg class="fill-success-500" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -45,43 +48,42 @@
                     </div>
                 </div>
 
-                <!-- Total Permissions Card -->
+                <!-- Users without Branch Card -->
                 <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('auth.total_permissions') }}</p>
-                            <p class="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-                                <span x-text="data.reduce((sum, role) => sum + (role.permissions_count || 0), 0)">0</span>
-                            </p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('auth.users_without_branch') }}</p>
+                            <p class="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90"
+                                x-text="data.filter(u => !u.branch_name || u.branch_name === '{{ __('auth.no_branch') }}').length">
+                                0</p>
                         </div>
-                        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10">
-                            <svg class="fill-blue-500" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-500/10">
+                            <svg class="fill-gray-500" width="24" height="24" viewBox="0 0 24 24" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path
-                                    d="M9 12L11 14L15 10M7.83594 15.5848C7.83594 15.5848 6.99994 16.4998 8.91694 17.4168C10.8339 18.3338 12.7499 18.3338 14.6669 17.4168C16.5839 16.4998 17.4189 15.5848 17.4189 15.5848M7.83594 8.41516C7.83594 8.41516 6.99994 7.50016 8.91694 6.58316C10.8339 5.66616 12.7499 5.66616 14.6669 6.58316C16.5839 7.50016 17.4189 8.41516 17.4189 8.41516M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                                    stroke="currentColor" stroke-width="2" />
+                                <path d="M8 12H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                             </svg>
                         </div>
                     </div>
                 </div>
 
-                <!-- Total Users Card -->
+                <!-- Users with Roles Card -->
                 <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('auth.total_users') }}</p>
-                            <p class="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-                                <span x-text="data.reduce((sum, role) => sum + (role.users_count || 0), 0)">0</span>
-                            </p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('auth.users') }} with
+                                {{ __('auth.user_role') }}</p>
+                            <p class="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90"
+                                x-text="data.filter(u => u.role_name && u.role_name !== '-').length">0</p>
                         </div>
-                        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-500/10">
-                            <svg class="fill-purple-500" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10">
+                            <svg class="fill-blue-500" width="24" height="24" viewBox="0 0 24 24" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z"
-                                    stroke="currentColor" stroke-width="2" />
-                                <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z"
-                                    stroke="currentColor" stroke-width="2" />
+                                <path fill-rule="evenodd" clip-rule="evenodd"
+                                    d="M12 2C13.1046 2 14 2.89543 14 4C14 5.10457 13.1046 6 12 6C10.8954 6 10 5.10457 10 4C10 2.89543 10.8954 2 12 2ZM16 8C17.1046 8 18 8.89543 18 10C18 11.1046 17.1046 12 16 12C14.8954 12 14 11.1046 14 10C14 8.89543 14.8954 8 16 8ZM8 8C9.10457 8 10 8.89543 10 10C10 11.1046 9.10457 12 8 12C6.89543 12 6 11.1046 6 10C6 8.89543 6.89543 8 8 8ZM12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14ZM16 14C17.1046 14 18 14.8954 18 16C18 17.1046 17.1046 18 16 18C14.8954 18 14 17.1046 14 16C14 14.8954 14.8954 14 16 14ZM8 14C9.10457 14 10 14.8954 10 16C10 17.1046 9.10457 18 8 18C6.89543 18 6 17.1046 6 16C6 14.8954 6.89543 14 8 14ZM4 20C4 18.8954 4.89543 18 6 18C7.10457 18 8 18.8954 8 20C8 21.1046 7.10457 22 6 22C4.89543 22 4 21.1046 4 20ZM10 20C10 18.8954 10.8954 18 12 18C13.1046 18 14 18.8954 14 20C14 21.1046 13.1046 22 12 22C10.8954 22 10 21.1046 10 20ZM16 20C16 18.8954 16.8954 18 18 18C19.1046 18 20 18.8954 20 20C20 21.1046 19.1046 22 18 22C16.8954 22 16 21.1046 16 20Z"
+                                    fill="currentColor" />
                             </svg>
                         </div>
                     </div>
@@ -94,20 +96,19 @@
                     <div class="px-5 py-4 sm:px-6 sm:py-5">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-                                    {{ __('auth.roles') }}
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ __('auth.users') }}
                                 </h3>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('auth.manage_roles') }}
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('auth.manage_users') }}
                                 </p>
                             </div>
-                            <a href="{{ route('roles.create') }}"
+                            <a href="{{ route('users.create') }}"
                                 class="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 dark:bg-brand-500 dark:hover:bg-brand-600">
                                 <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
                                     <path d="M10 4.16667V15.8333M4.16667 10H15.8333" stroke="currentColor" stroke-width="2"
                                         stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
-                                {{ __('auth.add_role') }}
+                                {{ __('auth.add_user') }}
                             </a>
                         </div>
                     </div>
@@ -127,7 +128,8 @@
                                         </svg>
                                     </div>
                                     <div class="flex-1">
-                                        <h3 class="text-sm font-semibold text-success-800 dark:text-success-300">Success!
+                                        <h3 class="text-sm font-semibold text-success-800 dark:text-success-300">
+                                            {{ __('auth.success') }}!
                                         </h3>
                                         <p class="mt-1 text-sm text-success-700 dark:text-success-400">
                                             {{ session('success') }}
@@ -160,7 +162,8 @@
                                         </svg>
                                     </div>
                                     <div class="flex-1">
-                                        <h3 class="text-sm font-semibold text-error-800 dark:text-error-300">Error</h3>
+                                        <h3 class="text-sm font-semibold text-error-800 dark:text-error-300">
+                                            {{ __('auth.error') }}</h3>
                                         <p class="mt-1 text-sm text-error-700 dark:text-error-400">
                                             {{ session('error') }}
                                         </p>
@@ -231,29 +234,26 @@
                                     </button>
 
                                     <input type="text" x-model="search" @input.debounce.300ms="loadData()"
-                                        placeholder="Search..."
+                                        placeholder="{{ __('auth.search') }}..."
                                         class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-11 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[300px]" />
                                 </div>
                             </div>
 
                             <div class="max-w-full overflow-x-auto">
-                                <div class="min-w-[1050px]">
+                                <div class="min-w-[1200px]">
                                     <!-- table header start -->
                                     <div class="grid grid-cols-12 border-t border-gray-200 dark:border-gray-800">
                                         <div
                                             class="col-span-1 flex items-center border-r border-gray-200 px-4 py-3 dark:border-gray-800">
-                                            <p class="text-theme-xs font-semibold text-gray-700 dark:text-gray-400">
-                                                #
-                                            </p>
+                                            <p class="text-theme-xs font-semibold text-gray-700 dark:text-gray-400">#</p>
                                         </div>
                                         <div
-                                            class="col-span-3 flex items-center border-r border-gray-200 px-4 py-3 dark:border-gray-800">
+                                            class="col-span-2 flex items-center border-r border-gray-200 px-4 py-3 dark:border-gray-800">
                                             <div class="flex w-full cursor-pointer items-center justify-between"
                                                 @click="sortBy('name')">
                                                 <p class="text-theme-xs font-semibold text-gray-700 dark:text-gray-400">
-                                                    {{ __('auth.role_name') }}
+                                                    {{ __('auth.user_name') }}
                                                 </p>
-
                                                 <span class="flex flex-col gap-0.5">
                                                     <svg class="fill-gray-300 dark:fill-gray-700" width="8"
                                                         height="5" viewBox="0 0 8 5" fill="none"
@@ -262,7 +262,6 @@
                                                             d="M4.40962 0.585167C4.21057 0.300808 3.78943 0.300807 3.59038 0.585166L1.05071 4.21327C0.81874 4.54466 1.05582 5 1.46033 5H6.53967C6.94418 5 7.18126 4.54466 6.94929 4.21327L4.40962 0.585167Z"
                                                             fill="" />
                                                     </svg>
-
                                                     <svg class="fill-gray-300 dark:fill-gray-700" width="8"
                                                         height="5" viewBox="0 0 8 5" fill="none"
                                                         xmlns="http://www.w3.org/2000/svg">
@@ -276,44 +275,35 @@
                                         <div
                                             class="col-span-2 flex items-center border-r border-gray-200 px-4 py-3 dark:border-gray-800">
                                             <p class="text-theme-xs font-semibold text-gray-700 dark:text-gray-400">
-                                                {{ __('auth.permissions') }}
+                                                {{ __('auth.email_address') }}
+                                            </p>
+                                        </div>
+                                        <div
+                                            class="col-span-1 flex items-center border-r border-gray-200 px-4 py-3 dark:border-gray-800">
+                                            <p class="text-theme-xs font-semibold text-gray-700 dark:text-gray-400">
+                                                {{ __('auth.phone') }}
+                                            </p>
+                                        </div>
+                                        <div
+                                            class="col-span-1 flex items-center border-r border-gray-200 px-4 py-3 dark:border-gray-800">
+                                            <p class="text-theme-xs font-semibold text-gray-700 dark:text-gray-400">
+                                                {{ __('auth.status') }}
                                             </p>
                                         </div>
                                         <div
                                             class="col-span-2 flex items-center border-r border-gray-200 px-4 py-3 dark:border-gray-800">
                                             <p class="text-theme-xs font-semibold text-gray-700 dark:text-gray-400">
-                                                {{ __('auth.users') }}
+                                                {{ __('auth.branch') }}
                                             </p>
                                         </div>
                                         <div
                                             class="col-span-2 flex items-center border-r border-gray-200 px-4 py-3 dark:border-gray-800">
-                                            <div class="flex w-full cursor-pointer items-center justify-between"
-                                                @click="sortBy('created_at')">
-                                                <p class="text-theme-xs font-semibold text-gray-700 dark:text-gray-400">
-                                                    {{ __('auth.created_at') }}
-                                                </p>
-
-                                                <span class="flex flex-col gap-0.5">
-                                                    <svg class="fill-gray-300 dark:fill-gray-700" width="8"
-                                                        height="5" viewBox="0 0 8 5" fill="none"
-                                                        xmlns="http://www.w3.org/2000/svg">
-                                                        <path
-                                                            d="M4.40962 0.585167C4.21057 0.300808 3.78943 0.300807 3.59038 0.585166L1.05071 4.21327C0.81874 4.54466 1.05582 5 1.46033 5H6.53967C6.94418 5 7.18126 4.54466 6.94929 4.21327L4.40962 0.585167Z"
-                                                            fill="" />
-                                                    </svg>
-
-                                                    <svg class="fill-gray-300 dark:fill-gray-700" width="8"
-                                                        height="5" viewBox="0 0 8 5" fill="none"
-                                                        xmlns="http://www.w3.org/2000/svg">
-                                                        <path
-                                                            d="M4.40962 4.41483C4.21057 4.69919 3.78943 4.69919 3.59038 4.41483L1.05071 0.786732C0.81874 0.455343 1.05582 0 1.46033 0H6.53967C6.94418 0 7.18126 0.455342 6.94929 0.786731L4.40962 4.41483Z"
-                                                            fill="" />
-                                                    </svg>
-                                                </span>
-                                            </div>
+                                            <p class="text-theme-xs font-semibold text-gray-700 dark:text-gray-400">
+                                                {{ __('auth.user_role') }}
+                                            </p>
                                         </div>
                                         <div
-                                            class="col-span-2 flex items-center justify-end px-4 py-3 dark:border-gray-800">
+                                            class="col-span-1 flex items-center justify-end px-4 py-3 dark:border-gray-800">
                                             <p class="text-theme-xs font-semibold text-gray-700 dark:text-gray-400">
                                                 {{ __('auth.actions') }}
                                             </p>
@@ -335,101 +325,94 @@
                                     </template>
 
                                     <template x-if="!loading && paginatedData.length === 0">
-                                        <div class="grid grid-cols-12 border-t border-gray-100 dark:border-gray-800 py-8">
+                                        <div class="grid grid-cols-12 border-t border-gray-100 dark:border-gray-800 py-12">
                                             <div class="col-span-12 text-center">
-                                                <p class="text-sm text-gray-500 dark:text-gray-400">
-                                                    {{ __('auth.no_roles_found') }}</p>
-                                                <p class="text-xs text-gray-400 mt-2">Data length: <span
-                                                        x-text="data.length"></span>, Loading: <span
-                                                        x-text="loading"></span></p>
+                                                <div class="flex flex-col items-center justify-center">
+                                                    <div
+                                                        class="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                                                        <svg class="h-8 w-8 text-gray-400" fill="none"
+                                                            stroke="currentColor" viewBox="0 0 24 24"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" />
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" />
+                                                        </svg>
+                                                    </div>
+                                                    <h3 class="mt-4 text-base font-semibold text-gray-900 dark:text-white">
+                                                        {{ __('auth.no_users_found') }}
+                                                    </h3>
+                                                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                                        <span x-show="search">
+                                                            {{ __('auth.adjust_search_filter') }}
+                                                        </span>
+                                                        <span x-show="!search">
+                                                            {{ __('auth.create_first_user') }}
+                                                        </span>
+                                                    </p>
+                                                    <div class="mt-6" x-show="!search">
+                                                        <a href="{{ route('users.create') }}"
+                                                            class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor"
+                                                                viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2" d="M12 4v16m8-8H4" />
+                                                            </svg>
+                                                            {{ __('auth.add_first_user') }}
+                                                        </a>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </template>
 
-                                    <template x-for="(role, index) in paginatedData" :key="role.id">
+                                    <template x-for="(user, index) in paginatedData" :key="user.id">
                                         <div class="grid grid-cols-12 border-t border-gray-100 dark:border-gray-800">
                                             <div
                                                 class="col-span-1 flex items-center border-r border-gray-100 px-4 py-[17.5px] dark:border-gray-800">
                                                 <p class="text-theme-sm text-gray-700 dark:text-gray-400"
-                                                    x-text="role.DT_RowIndex || (startEntry + index)">
+                                                    x-text="user.DT_RowIndex || (startEntry + index)">
                                                 </p>
                                             </div>
                                             <div
-                                                class="col-span-3 flex items-center border-r border-gray-100 px-4 py-[17.5px] dark:border-gray-800">
-                                                <span class="inline-flex items-center gap-2">
-                                                    <span
-                                                        class="text-theme-sm font-semibold text-gray-800 dark:text-white/90"
-                                                        x-text="role.name">
-                                                    </span>
-                                                    <span class="rounded-full px-2 py-0.5 text-xs font-medium"
-                                                        :class="{
-                                                            'bg-brand-500/10 text-brand-700 dark:bg-brand-500/20 dark:text-brand-400': role
-                                                                .name === 'Super Admin',
-                                                            'bg-success-500/10 text-success-700 dark:bg-success-500/20 dark:text-success-400': role
-                                                                .name === 'Treasurer',
-                                                            'bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400': role
-                                                                .name === 'Branch Manager',
-                                                            'bg-purple-500/10 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400': role
-                                                                .name === 'Cashier',
-                                                            'bg-gray-500/10 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400':
-                                                                !['Super Admin', 'Treasurer', 'Branch Manager',
-                                                                    'Cashier'
-                                                                ].includes(role.name)
-                                                        }"
-                                                        x-text="role.name === 'Super Admin' ? 'Admin' : 'Default'">
-                                                    </span>
+                                                class="col-span-2 flex items-center border-r border-gray-100 px-4 py-[17.5px] dark:border-gray-800">
+                                                <span class="text-theme-sm font-semibold text-gray-800 dark:text-white/90"
+                                                    x-text="user.name">
+                                                </span>
+                                            </div>
+                                            <div
+                                                class="col-span-2 flex items-center border-r border-gray-100 px-4 py-[17.5px] dark:border-gray-800">
+                                                <span class="text-theme-sm text-gray-700 dark:text-gray-400"
+                                                    x-text="user.email">
+                                                </span>
+                                            </div>
+                                            <div
+                                                class="col-span-1 flex items-center border-r border-gray-100 px-4 py-[17.5px] dark:border-gray-800">
+                                                <span class="text-theme-sm text-gray-700 dark:text-gray-400"
+                                                    x-text="user.phone || '-'">
+                                                </span>
+                                            </div>
+                                            <div
+                                                class="col-span-1 flex items-center border-r border-gray-100 px-4 py-[17.5px] dark:border-gray-800">
+                                                <div x-html="user.status"></div>
+                                            </div>
+                                            <div
+                                                class="col-span-2 flex items-center border-r border-gray-100 px-4 py-[17.5px] dark:border-gray-800">
+                                                <span class="text-theme-sm text-gray-700 dark:text-gray-400"
+                                                    x-text="user.branch_name">
                                                 </span>
                                             </div>
                                             <div
                                                 class="col-span-2 flex items-center border-r border-gray-100 px-4 py-[17.5px] dark:border-gray-800">
                                                 <span
-                                                    class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
-                                                    <svg class="fill-current" width="16" height="16"
-                                                        viewBox="0 0 16 16" fill="none"
-                                                        xmlns="http://www.w3.org/2000/svg">
-                                                        <path
-                                                            d="M8 7.33333C9.47276 7.33333 10.6667 6.13943 10.6667 4.66667C10.6667 3.19391 9.47276 2 8 2C6.52724 2 5.33333 3.19391 5.33333 4.66667C5.33333 6.13943 6.52724 7.33333 8 7.33333Z"
-                                                            fill="currentColor" />
-                                                        <path
-                                                            d="M3.33333 14C3.33333 11.4227 5.42267 9.33333 8 9.33333C10.5773 9.33333 12.6667 11.4227 12.6667 14V14.6667H3.33333V14Z"
-                                                            fill="currentColor" />
-                                                    </svg>
-                                                    <span x-text="role.permissions_count || 0"></span>
+                                                    class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-sm font-medium text-brand-700 dark:bg-brand-500/10 dark:text-brand-400"
+                                                    x-text="user.role_name">
                                                 </span>
                                             </div>
-                                            <div
-                                                class="col-span-2 flex items-center border-r border-gray-100 px-4 py-[17.5px] dark:border-gray-800">
-                                                <span
-                                                    class="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700 dark:bg-purple-500/10 dark:text-purple-400">
-                                                    <svg class="fill-current" width="16" height="16"
-                                                        viewBox="0 0 16 16" fill="none"
-                                                        xmlns="http://www.w3.org/2000/svg">
-                                                        <path
-                                                            d="M8 7.33333C9.47276 7.33333 10.6667 6.13943 10.6667 4.66667C10.6667 3.19391 9.47276 2 8 2C6.52724 2 5.33333 3.19391 5.33333 4.66667C5.33333 6.13943 6.52724 7.33333 8 7.33333Z"
-                                                            fill="currentColor" />
-                                                        <path
-                                                            d="M3.33333 14C3.33333 11.4227 5.42267 9.33333 8 9.33333C10.5773 9.33333 12.6667 11.4227 12.6667 14V14.6667H3.33333V14Z"
-                                                            fill="currentColor" />
-                                                    </svg>
-                                                    <span x-text="role.users_count || 0"></span>
-                                                </span>
-                                            </div>
-                                            <div
-                                                class="col-span-2 flex items-center border-r border-gray-100 px-4 py-[17.5px] dark:border-gray-800">
-                                                <span
-                                                    class="inline-flex items-center gap-1.5 text-theme-sm text-gray-700 dark:text-gray-400">
-                                                    <svg class="fill-current" width="16" height="16"
-                                                        viewBox="0 0 16 16" fill="none"
-                                                        xmlns="http://www.w3.org/2000/svg">
-                                                        <path
-                                                            d="M8 1.33333C4.318 1.33333 1.33333 4.318 1.33333 8C1.33333 11.682 4.318 14.6667 8 14.6667C11.682 14.6667 14.6667 11.682 14.6667 8C14.6667 4.318 11.682 1.33333 8 1.33333ZM8 13.3333C5.05467 13.3333 2.66667 10.9453 2.66667 8C2.66667 5.05467 5.05467 2.66667 8 2.66667C10.9453 2.66667 13.3333 5.05467 13.3333 8C13.3333 10.9453 10.9453 13.3333 8 13.3333ZM8.33333 4.66667H7.33333V8.33333H10.6667V7.33333H8.33333V4.66667Z"
-                                                            fill="currentColor" />
-                                                    </svg>
-                                                    <span x-text="role.created_at"></span>
-                                                </span>
-                                            </div>
-                                            <div class="col-span-2 flex items-center justify-end px-4 py-[17.5px]">
-                                                <div class="flex items-center gap-2" x-html="role.actions">
+                                            <div class="col-span-1 flex items-center justify-end px-4 py-[17.5px]">
+                                                <div class="flex items-center gap-2" x-html="user.actions">
                                                 </div>
                                             </div>
                                         </div>
@@ -483,9 +466,9 @@
 
                                     <p
                                         class="border-t border-gray-100 pt-3 text-center text-sm font-medium text-gray-500 dark:border-gray-800 dark:text-gray-400 xl:border-t-0 xl:pt-0 xl:text-left">
-                                        Showing <span x-text="startEntry"></span> to
-                                        <span x-text="endEntry"></span> of
-                                        <span x-text="totalEntries"></span> entries
+                                        {{ __('auth.showing') }} <span x-text="startEntry"></span> {{ __('auth.to') }}
+                                        <span x-text="endEntry"></span> {{ __('auth.of') }}
+                                        <span x-text="totalEntries"></span> {{ __('auth.entries') }}
                                     </p>
                                 </div>
                             </div>
@@ -500,8 +483,6 @@
     @push('styles')
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
         <style>
-            /* Ensure SweetAlert2 backdrop covers entire screen including sidebar and header */
-            /* Header has z-99999, sidebar has z-9999, so we need higher z-index for SweetAlert */
             .swal2-container {
                 z-index: 100000 !important;
                 position: fixed !important;
@@ -524,15 +505,26 @@
                 margin: 0 !important;
             }
 
-            /* Ensure backdrop covers full viewport */
             body.swal2-height-auto {
                 height: 100vh !important;
                 overflow: hidden !important;
             }
 
-            /* Ensure modal is centered on full screen */
             .swal2-popup {
                 margin: 0 !important;
+            }
+
+            /* Reduce font size for delete confirmation modal */
+            .swal2-title-delete,
+            .swal2-popup .swal2-title.swal2-title-delete {
+                font-size: 1.125rem !important;
+                line-height: 1.75rem !important;
+            }
+
+            .swal2-content-delete,
+            .swal2-popup .swal2-content.swal2-content-delete {
+                font-size: 0.875rem !important;
+                line-height: 1.5rem !important;
             }
         </style>
     @endpush
@@ -540,48 +532,19 @@
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
-            // Edit Role function
-            function editRole(roleId) {
-                // Prevent editing Super Admin (role id 1)
-                if (roleId === 1) {
-                    Swal.fire({
-                        title: '{{ __('auth.cannot_edit') }}',
-                        text: '{{ __('auth.cannot_edit_super_admin') }}',
-                        icon: 'error',
-                        confirmButtonColor: '#6b7280',
-                        customClass: {
-                            container: 'swal2-container-custom'
-                        },
-                        backdrop: true,
-                        allowOutsideClick: true
-                    });
-                    return;
-                }
-                window.location.href = `/roles/${roleId}/edit`;
+            function editUser(userId) {
+                window.location.href = `/users/${userId}/edit`;
             }
 
-            // Delete Role function with SweetAlert
-            function deleteRole(roleId, roleName) {
-                // Prevent deletion of Super Admin (role id 1)
-                if (roleId === 1) {
-                    Swal.fire({
-                        title: '{{ __('auth.cannot_delete') }}',
-                        text: '{{ __('auth.cannot_delete_super_admin') }}',
-                        icon: 'error',
-                        confirmButtonColor: '#6b7280',
-                        customClass: {
-                            container: 'swal2-container-custom'
-                        },
-                        backdrop: true,
-                        allowOutsideClick: true
-                    });
-                    return;
-                }
-
+            function deleteUser(userId, userName) {
                 Swal.fire({
                     title: '{{ __('auth.are_you_sure') }}?',
-                    text: `{{ __('auth.do_you_want_to_delete_role') }} "${roleName}"? {{ __('auth.this_action_cannot_be_undone') }}!`,
+                    text: `{{ __('auth.do_you_want_to_delete_user') }} "${userName}"? {{ __('auth.this_action_cannot_be_undone') }}!`,
                     icon: 'warning',
+                    customClass: {
+                        title: 'swal2-title-delete',
+                        content: 'swal2-content-delete'
+                    },
                     showCancelButton: true,
                     confirmButtonColor: '#d33',
                     cancelButtonColor: '#6b7280',
@@ -591,7 +554,7 @@
                     showLoaderOnConfirm: true,
                     preConfirm: async () => {
                         try {
-                            const response = await fetch(`/roles/${roleId}`, {
+                            const response = await fetch(`/users/${userId}`, {
                                 method: 'DELETE',
                                 headers: {
                                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -603,9 +566,9 @@
 
                             if (!response.ok) {
                                 const errorData = await response.json().catch(() => ({
-                                    message: '{{ __('auth.failed_to_delete_role') }}'
+                                    message: '{{ __('auth.failed_to_delete_user') }}'
                                 }));
-                                throw new Error(errorData.message || '{{ __('auth.failed_to_delete_role') }}');
+                                throw new Error(errorData.message || '{{ __('auth.failed_to_delete_user') }}');
                             }
 
                             return response.json();
@@ -618,13 +581,12 @@
                     if (result.isConfirmed) {
                         Swal.fire({
                             title: '{{ __('auth.deleted') }}!',
-                            text: `{{ __('auth.role') }} "${roleName}" {{ __('auth.has_been_deleted') }}.`,
+                            text: `{{ __('auth.user') }} "${userName}" {{ __('auth.has_been_deleted') }}.`,
                             icon: 'success',
                             timer: 2000,
                             showConfirmButton: false
                         }).then(() => {
-                            // Reload table data
-                            const table = document.querySelector('[x-data*="rolesDataTable"]');
+                            const table = document.querySelector('[x-data*="usersDataTable"]');
                             if (table && table._x_dataStack && table._x_dataStack[0]) {
                                 table._x_dataStack[0].loadData();
                             } else {
@@ -635,16 +597,7 @@
                 });
             }
 
-            // Ensure Alpine is available
-            document.addEventListener('DOMContentLoaded', function() {
-                if (typeof Alpine === 'undefined') {
-                    console.error('Alpine.js is not loaded!');
-                } else {
-                    console.log('Alpine.js is available');
-                }
-            });
-
-            function rolesDataTable() {
+            function usersDataTable() {
                 return {
                     search: "",
                     sortColumn: "name",
@@ -656,36 +609,19 @@
                     totalRecords: 0,
 
                     init() {
-                        console.log('Alpine.js rolesDataTable initialized');
-                        // Don't load data here since x-init="loadData()" is on parent
+                        console.log('Alpine.js usersDataTable initialized');
                     },
 
                     async loadData() {
-                        console.log('Loading data...', {
-                            currentPage: this.currentPage,
-                            perPage: this.perPage,
-                            search: this.search
-                        });
                         this.loading = true;
                         try {
-                            // Build query parameters for Yajra DataTables format
                             const params = new URLSearchParams();
                             params.append('draw', '1');
                             params.append('start', String((this.currentPage - 1) * this.perPage));
                             params.append('length', String(this.perPage));
                             params.append('search[value]', this.search || '');
-                            // Temporarily disable ordering to avoid column index errors
-                            // Will re-enable once DataTables column mapping is fixed
-                            // if (this.sortColumn === 'name') {
-                            //     params.append('order[0][column]', '1');
-                            //     params.append('order[0][dir]', this.sortDirection);
-                            // } else if (this.sortColumn === 'created_at') {
-                            //     params.append('order[0][column]', '4');
-                            //     params.append('order[0][dir]', this.sortDirection);
-                            // }
 
-                            const url = `{{ route('roles.data') }}?${params.toString()}`;
-                            console.log('Fetching from:', url);
+                            const url = `{{ route('users.data') }}?${params.toString()}`;
 
                             const response = await fetch(url, {
                                 headers: {
@@ -695,84 +631,47 @@
                                 credentials: 'same-origin'
                             });
 
-                            console.log('Response status:', response.status, response.statusText);
-
                             if (!response.ok) {
-                                const errorText = await response.text();
-                                console.error('HTTP error response:', errorText);
                                 throw new Error(`HTTP error! status: ${response.status}`);
                             }
 
                             const contentType = response.headers.get('content-type');
-                            console.log('Content-Type:', contentType);
-
                             if (!contentType || !contentType.includes('application/json')) {
-                                const text = await response.text();
-                                console.error('Non-JSON response:', text.substring(0, 500));
-                                throw new Error('Response is not JSON. Might be a redirect to login page.');
+                                throw new Error('Response is not JSON.');
                             }
 
                             const result = await response.json();
-                            console.log('DataTables response:', result);
-                            console.log('Data array:', result.data);
-                            console.log('Data is array?', Array.isArray(result.data));
-                            console.log('Data length:', result.data?.length);
 
                             if (result.data && Array.isArray(result.data)) {
-                                console.log('Processing data array...');
                                 this.data = result.data.map((item, index) => {
-                                    console.log('Processing item:', item);
                                     return {
                                         id: item.id,
                                         DT_RowIndex: item.DT_RowIndex || ((this.currentPage - 1) * this.perPage +
                                             index + 1),
                                         name: item.name,
-                                        permissions_count: item.permissions_count ?? 0,
-                                        users_count: item.users_count ?? 0,
-                                        created_at: item.created_at,
+                                        email: item.email,
+                                        phone: item.phone || '',
+                                        status: item.status || '',
+                                        branch_name: item.branch_name || '',
+                                        role_name: item.role_name || '',
                                         actions: item.actions || ''
                                     };
                                 });
                                 this.totalRecords = result.recordsFiltered || result.recordsTotal || 0;
-                                console.log('Final data:', this.data);
-                                console.log('Total records:', this.totalRecords);
                             } else {
-                                console.warn('Unexpected response format:', result);
                                 this.data = [];
                                 this.totalRecords = 0;
                             }
                         } catch (error) {
                             console.error('Error loading data:', error);
-                            console.error('Error stack:', error.stack);
                             this.data = [];
                             this.totalRecords = 0;
                         } finally {
                             this.loading = false;
-                            console.log('Loading complete. Data length:', this.data.length);
                         }
                     },
 
-                    getColumnIndex(column) {
-                        // Map to DataTables column indices
-                        // Note: DataTables uses 0-based indexing
-                        // Actual DB columns: id, name, guard_name, created_at, updated_at
-                        // Added columns: permissions_count, users_count, actions
-                        // So the order is: id(0), name(1), guard_name(2), created_at(3), updated_at(4), permissions_count(5), users_count(6), actions(7)
-                        // But we only want to allow sorting on name and created_at
-                        const columnMap = {
-                            'name': 1, // name column
-                            'created_at': 3 // created_at column
-                        };
-                        return columnMap[column] || 1; // default to name
-                    },
-
-                    get filteredData() {
-                        return this.data;
-                    },
-
                     get paginatedData() {
-                        // Data is already paginated from server
-                        console.log('paginatedData getter called, data length:', this.data.length);
                         return this.data;
                     },
 

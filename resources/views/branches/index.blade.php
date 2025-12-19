@@ -11,7 +11,7 @@
                 <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Total Branches</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('auth.total_branches') }}</p>
                             <p class="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90" x-text="totalEntries">0
                             </p>
                         </div>
@@ -30,7 +30,7 @@
                 <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Active Branches</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('auth.active_branches') }}</p>
                             <p class="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90"
                                 x-text="data.filter(b => b.is_active).length">0</p>
                         </div>
@@ -49,7 +49,7 @@
                 <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Inactive Branches</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('auth.inactive_branches') }}</p>
                             <p class="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90"
                                 x-text="data.filter(b => !b.is_active).length">0</p>
                         </div>
@@ -90,8 +90,9 @@
                     <div class="px-5 py-4 sm:px-6 sm:py-5">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Branches</h3>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage and view all branches
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ __('auth.branches') }}
+                                </h3>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('auth.manage_branches') }}
                                 </p>
                             </div>
                             <a href="{{ route('branches.create') }}"
@@ -177,7 +178,7 @@
                             class="overflow-hidden rounded-xl border border-gray-200 bg-white pt-4 dark:border-gray-800 dark:bg-white/[0.03]">
                             <div class="mb-4 flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div class="flex items-center gap-3">
-                                    <span class="text-gray-500 dark:text-gray-400">Show</span>
+                                    <span class="text-gray-500 dark:text-gray-400">{{ __('auth.show') }}</span>
                                     <div x-data="{ isOptionSelected: false }" class="relative z-20 bg-transparent">
                                         <select
                                             class="dark:bg-dark-900 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none py-2 pl-3 pr-8 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
@@ -244,7 +245,7 @@
                                     </button>
 
                                     <input type="text" x-model="search" @input.debounce.300ms="loadData()"
-                                        placeholder="Search..."
+                                        placeholder="{{ __('auth.search') }}..."
                                         class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-11 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[300px]" />
                                 </div>
                             </div>
@@ -262,7 +263,7 @@
                                             <div class="flex w-full cursor-pointer items-center justify-between"
                                                 @click="sortBy('name')">
                                                 <p class="text-theme-xs font-semibold text-gray-700 dark:text-gray-400">
-                                                    Branch Name
+                                                    {{ __('auth.branch_name') }}
                                                 </p>
                                                 <span class="flex flex-col gap-0.5">
                                                     <svg class="fill-gray-300 dark:fill-gray-700" width="8"
@@ -323,7 +324,8 @@
                                                 <div
                                                     class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-brand-500 border-t-transparent">
                                                 </div>
-                                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+                                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                                    {{ __('auth.loading') }}...</p>
                                             </div>
                                         </div>
                                     </template>
@@ -350,7 +352,7 @@
                                                             Try adjusting your search or filter criteria.
                                                         </span>
                                                         <span x-show="!search && !statusFilter">
-                                                            Get started by creating a new branch.
+                                                            {{ __('auth.create_first_branch') }}
                                                         </span>
                                                     </p>
                                                     <div class="mt-6" x-show="!search && !statusFilter">
@@ -429,7 +431,7 @@
                                         <button @click="prevPage()"
                                             class="mr-2.5 flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-gray-700 shadow-theme-xs hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]"
                                             :disabled="currentPage === 1">
-                                            Previous
+                                            {{ __('auth.previous') }}
                                         </button>
 
                                         <button @click="goToPage(1)"
@@ -467,9 +469,9 @@
 
                                     <p
                                         class="border-t border-gray-100 pt-3 text-center text-sm font-medium text-gray-500 dark:border-gray-800 dark:text-gray-400 xl:border-t-0 xl:pt-0 xl:text-left">
-                                        Showing <span x-text="startEntry"></span> to
-                                        <span x-text="endEntry"></span> of
-                                        <span x-text="totalEntries"></span> entries
+                                        {{ __('auth.showing') }} <span x-text="startEntry"></span> {{ __('auth.to') }}
+                                        <span x-text="endEntry"></span> {{ __('auth.of') }}
+                                        <span x-text="totalEntries"></span> {{ __('auth.entries') }}
                                     </p>
                                 </div>
                             </div>

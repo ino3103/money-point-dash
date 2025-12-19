@@ -29,6 +29,14 @@ class Branch extends Model
      *
      * @return array<string, string>
      */
+    /**
+     * Get the users that belong to this branch.
+     */
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
+
     protected function casts(): array
     {
         return [
